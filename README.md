@@ -41,7 +41,7 @@ Desenvolver um software em Java utilizando Micronaut, para gerenciar pedidos e c
 ├── backend/                   # Backend Micronaut (Java)
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/puc/aluguelcarros/
+│   │   │   ├── java/com/puc/MoedaEstudantil/
 │   │   │   │   ├── configuration/  # Configurações do framework
 │   │   │   │   ├── controller/     # Endpoints da API REST
 │   │   │   │   ├── enums/          # Tipos enumerados
@@ -120,6 +120,10 @@ Para o desenvolvimento da interface, foi utilizada a paleta de cores:
 ### Diagrama de Componentes
 
 ![Diagrama de Componentes](docs/Diagrama-de-ComponentesV2.png)
+
+### Modelo ER
+
+![Modelo ER](docs/Modelo_ER.png)
 
 
 ## Integrantes
