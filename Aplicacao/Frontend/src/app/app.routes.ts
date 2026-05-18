@@ -15,6 +15,21 @@ export const routes: Routes = [
   
   // ================= ROTAS DE ALUNO =================
   {
+    path: 'alunos/extrato',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/alunos/extrato/aluno-extrato.component').then((m) => m.AlunoExtratoComponent),
+  },
+  {
+    path: 'alunos/painel',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/alunos/aluno-dashboard.component').then((m) => m.AlunoDashboardComponent),
+  },
+  {
+    path: 'alunos/editar-perfil',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/alunos/profile-edit.component').then((m) => m.ProfileEditComponent),
+  },
+  {
     path: 'alunos/novo',
     loadComponent: () => import('./features/alunos/aluno-form.component').then((m) => m.AlunoFormComponent),
   },

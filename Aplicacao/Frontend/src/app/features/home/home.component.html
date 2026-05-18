@@ -17,7 +17,7 @@
 
                 <ng-container *ngIf="isLoggedIn">
                     <li><span class="greeting-text" style="color: white; margin-right: 15px; font-weight: bold;">Olá, {{ userName }}! 👋</span></li>
-                    <li><a routerLink="/alunos" *ngIf="userRole === 'ALUNO'" class="icon ion-person">Meu Painel</a></li>
+                    <li><a routerLink="/alunos/painel" *ngIf="userRole === 'ALUNO'" class="icon ion-person">Meu Painel</a></li>
                     <li><a routerLink="/empresas" *ngIf="userRole === 'EMPRESA'" class="icon ion-briefcase">Painel Empresa</a></li>
                     <li><a href="#" (click)="logout($event)" class="icon ion-log-out button button-error">Sair da Conta</a></li>
                 </ng-container>
@@ -37,7 +37,7 @@
 
             <ng-container *ngIf="isLoggedIn && userRole === 'ALUNO'">
                 <p class="header-description">Bem-vindo(a) à sua área! Você está no caminho certo para transformar seu esforço em prêmios.</p>
-                <a routerLink="/alunos" class="button button-accent">Ver Meu Extrato de Moedas</a>
+                <a routerLink="/alunos/painel" class="button button-accent">Ver Meu Painel</a>
             </ng-container>
 
             <ng-container *ngIf="isLoggedIn && userRole === 'EMPRESA'">
@@ -94,19 +94,19 @@
                 <h3>💰 Meu Extrato</h3>
                 <p>Acompanhe quantas Student Coins você recebeu dos seus professores.</p>
                 <br>
-                <a routerLink="/alunos" class="button button-accent">Ver Extrato</a>
+                <a routerLink="/alunos/extrato" class="button button-accent">Ver Extrato</a>
             </div>
             <div class="col third">
                 <h3>🎁 Vantagens</h3>
-                <p>Veja a lista completa de produtos e descontos disponíveis na sua região.</p>
+                <p>Em breve você poderá trocar moedas por benefícios na sua instituição.</p>
                 <br>
-                <a routerLink="/alunos" class="button button-accent">Explorar Prêmios</a>
+                <a routerLink="/alunos/painel" class="button button-accent">Ir para Meu Painel</a>
             </div>
             <div class="col third">
                 <h3>⚙️ Meu Perfil</h3>
                 <p>Atualize seus dados, sua instituição de ensino e altere sua senha.</p>
                 <br>
-                <a routerLink="/alunos" class="button button-accent">Editar Perfil</a>
+                <a routerLink="/alunos/painel" class="button button-accent">Ir para Meu Painel</a>
             </div>
         </section>
     </ng-container>
@@ -142,4 +142,4 @@
         <li><a href="#" class="icon ion-social-github">Github do Projeto</a></li>
         <li><a href="#" class="icon ion-locked">Política de Privacidade</a></li>
     </ul>
-</footer>
+</footer>>

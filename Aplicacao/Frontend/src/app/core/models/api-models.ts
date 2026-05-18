@@ -57,4 +57,24 @@ export interface LoginResponse {
   nome: string;
 }
 
+export interface TransacaoResponse {
+  id: number;
+  dataHora: string | Date;
+  descricao: string;
+  tipo: 'CREDITO' | 'DEBITO';
+  valor: number;
+}
+
+export type TransactionType = 'CREDITO' | 'DEBITO';
+
+export interface Transaction {
+  id: number;
+  dataHora: string | Date;
+  descricao: string;
+  tipo: TransactionType;
+  valor: number;
+}
+
+export type Student = AlunoResponse;
+
 
