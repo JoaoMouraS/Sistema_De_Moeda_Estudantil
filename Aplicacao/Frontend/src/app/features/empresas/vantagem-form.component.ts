@@ -1,72 +1,90 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { EmpresaService } from '../../core/services/empresa.service';
-import { EmpresaRequest } from '../../core/models/api-models';
+import { InstituicaoService } from '../../core/services/instituicao.service';
+import { Instituicao } from '../../core/models/api-models';
 
 @Component({
   standalone: true,
-  selector: 'app-empresa-form',
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink,
-  ],
+  selector: 'app-vantagem-form',
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
     <div class="host-wrapper">
       <div class="wrapper__area">
         
-        <div class="forms__area">
+        <div class="forms__area" style="flex: 2;">
           <form class="login__form" [formGroup]="form" (ngSubmit)="onSubmit()">
-            <h1 class="form__title">{{ isEdit() ? 'Editar Empresa' : 'Cadastrar Empresa Parceira' }}</h1>
+            <h1 class="form__title">Criar Nova Vantagem</h1>
+            <p class="subtitle">Ofereça produtos e descontos para atrair os melhores alunos!</p>
             
             <div class="form-grid">
-              <div class="input__group span-2" [class.formError]="form.get('nomeFantasia')?.invalid && form.get('nomeFantasia')?.touched">
+              
+              <div class="input__group span-2" [class.formError]="form.get('titulo')?.invalid && form.get('titulo')?.touched">
                 <label class="field">
-                  <input type="text" formControlName="nomeFantasia" placeholder="Nome Fantasia da Empresa">
+                  <input type="text" formControlName="titulo" placeholder="Ex: 50% Off no Combo Burger">
                 </label>
-                <span class="input__icon"><i class="bx bx-buildings"></i></span>
-                <small class="input__error_message">Nome Fantasia é obrigatório</small>
+                <span class="input__icon"><i class="bx bx-purchase-tag-alt"></i></span>
+                <small class="input__error_message">Título obrigatório</small>
               </div>
 
-              <div class="input__group" [class.formError]="form.get('cnpj')?.invalid && form.get('cnpj')?.touched">
+              <div class="input__group" [class.formError]="form.get('custoMoedas')?.invalid && form.get('custoMoedas')?.touched">
                 <label class="field">
-                  <input type="text" formControlName="cnpj" placeholder="CNPJ (14 dígitos)" maxlength="14">
+                  <input type="number" formControlName="custoMoedas" placeholder="Preço em Student Coins (Ex: 100)">
                 </label>
-                <span class="input__icon"><i class="bx bx-receipt"></i></span>
-                <small class="input__error_message">CNPJ inválido</small>
+                <span class="input__icon"><i class="bx bx-coin-stack"></i></span>
+                <small class="input__error_message">Valor inválido</small>
               </div>
 
-              <div class="input__group" [class.formError]="form.get('email')?.invalid && form.get('email')?.touched">
+              <div class="input__group" [class.formError]="form.get('quantidade')?.invalid && form.get('quantidade')?.touched">
                 <label class="field">
-                  <input type="email" formControlName="email" placeholder="Email Comercial">
+                  <input type="number" formControlName="quantidade" placeholder="Limite de Cupons (Ex: 50)">
                 </label>
-                <span class="input__icon"><i class="bx bx-envelope"></i></span>
-                <small class="input__error_message">Email inválido</small>
+                <span class="input__icon"><i class="bx bx-layer"></i></span>
               </div>
 
-              <div class="input__group span-2" [class.formError]="form.get('senha')?.invalid && form.get('senha')?.touched">
+              <div class="input__group" [class.formError]="form.get('cupom')?.invalid && form.get('cupom')?.touched">
                 <label class="field">
-                  <input type="password" formControlName="senha" [placeholder]="isEdit() ? 'Senha (deixe vazio para manter)' : 'Senha de Acesso'">
+                  <input type="text" formControlName="cupom" placeholder="Código Secreto (Ex: PROMO50)">
                 </label>
-                <span class="input__icon"><i class="bx bx-lock"></i></span>
-                <small class="input__error_message">Senha deve ter no mínimo 6 caracteres</small>
+                <span class="input__icon"><i class="bx bx-barcode-reader"></i></span>
+                <small class="input__error_message">Cupom obrigatório</small>
+              </div>
+
+              <div class="input__group" [class.formError]="form.get('validade')?.invalid && form.get('validade')?.touched">
+                <label class="field">
+                  <input type="date" formControlName="validade" title="Data de Validade">
+                </label>
+                <span class="input__icon"><i class="bx bx-calendar"></i></span>
+              </div>
+
+              <div class="input__group span-2" [class.formError]="form.get('instituicaoId')?.invalid && form.get('instituicaoId')?.touched">
+                <label class="field">
+                  <select formControlName="instituicaoId" class="custom-select">
+                    <option value="0" disabled selected>Disponível para qual Instituição?</option>
+                    <option value="ALL">Todas as Instituições</option>
+                    @for (i of instituicoes(); track i.id) {
+                      <option [value]="i.id">{{ i.nome }}</option>
+                    }
+                  </select>
+                </label>
+                <span class="input__icon"><i class="bx bxs-bank"></i></span>
               </div>
 
               <div class="input__group span-2" [class.formError]="form.get('descricao')?.invalid && form.get('descricao')?.touched">
                 <label class="field">
-                  <input type="text" formControlName="descricao" placeholder="Breve descrição da empresa ou ramo de atuação">
+                  <textarea formControlName="descricao" placeholder="Descreva as regras da vantagem..." rows="3"></textarea>
                 </label>
-                <span class="input__icon"><i class="bx bx-detail"></i></span>
+                <span class="input__icon"><i class="bx bx-align-left"></i></span>
               </div>
+
             </div>
 
             <div class="form-actions-row">
-              <a routerLink="/login" class="back-link"><i class="bx bx-arrow-back"></i> Voltar</a>
+              <a routerLink="/home" class="back-link"><i class="bx bx-arrow-back"></i> Voltar ao Painel</a>
               <button type="submit" class="submit-button btn-empresa" [disabled]="form.invalid || saving()">
-                {{ saving() ? 'Salvando...' : 'Salvar Empresa' }}
+                {{ saving() ? 'Publicando...' : 'Publicar Vantagem' }}
               </button>
             </div>
           </form> 
@@ -74,9 +92,9 @@ import { EmpresaRequest } from '../../core/models/api-models';
 
         <div class="aside__area">
           <div class="login__aside-info">
-            <h4>Seja Parceiro!</h4>
+            <h4>Atraia Talentos!</h4>
             <img src="https://d.top4top.io/p_1945xjz2y1.png" alt="Company">
-            <p>Cadastre sua empresa, ofereça vantagens aos alunos de destaque e atraia talentos para o seu negócio.</p>
+            <p>Ao criar vantagens exclusivas, você incentiva a educação e traz os melhores alunos para o seu negócio.</p>
           </div>
         </div>
         
@@ -98,14 +116,16 @@ import { EmpresaRequest } from '../../core/models/api-models';
       overflow: hidden; min-height: 550px;
     }
 
-    .forms__area { flex: 1.5; display: grid; place-items: center; padding: 40px; }
+    .forms__area { display: grid; place-items: center; padding: 40px; }
     
     .login__form { width: 100%; }
 
     .form__title {
       font-size: 1.8rem; font-weight: bold; text-transform: uppercase;
-      margin-bottom: 25px; color: var(--text-dark); text-align: center;
+      margin-bottom: 5px; color: var(--text-dark); text-align: center;
     }
+
+    .subtitle { text-align: center; color: #666; margin-bottom: 25px; font-size: 14px; }
 
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
     .span-2 { grid-column: span 2; }
@@ -119,14 +139,17 @@ import { EmpresaRequest } from '../../core/models/api-models';
     }
     .input__group .field:focus-within::after { transform: translateX(0); }
 
-    .input__group input {
+    .input__group input, .input__group select, .input__group textarea {
       outline: none; width: 100%; border: none; padding: 12px 10px 12px 40px; background: transparent;
       border-bottom: 2px solid var(--input-border); font-size: 14px; color: var(--text-dark);
     }
     
-    .formError .field input { border-color: var(--error); }
+    textarea { resize: none; }
+    .custom-select { appearance: none; cursor: pointer; }
+
+    .formError .field input, .formError .field select, .formError .field textarea { border-color: var(--error); }
     .input__group > span { position: absolute; font-size: 20px; color: var(--input-border); transition: 0.3s; }
-    .input__group input:focus ~ span { color: var(--secondary); }
+    .input__group input:focus ~ span, .input__group select:focus ~ span, .input__group textarea:focus ~ span { color: var(--secondary); }
     .input__group .input__icon { top: 10px; left: 10px; pointer-events: none; }
 
     .input__error_message {
@@ -135,7 +158,6 @@ import { EmpresaRequest } from '../../core/models/api-models';
     }
     .formError .input__error_message { opacity: 1; }
 
-    /* Ações */
     .form-actions-row { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
     
     .back-link {
@@ -152,7 +174,6 @@ import { EmpresaRequest } from '../../core/models/api-models';
     .btn-empresa { background-color: var(--secondary); }
     .btn-empresa:hover:not(:disabled) { background-color: var(--secondary-hover); transform: translateY(-2px); }
 
-    /* Aside Area - Tema Secundário (Empresa) */
     .aside__area {
       flex: 1; background-color: var(--secondary);
       display: grid; place-items: center; padding: 40px 20px;
@@ -174,44 +195,27 @@ import { EmpresaRequest } from '../../core/models/api-models';
     }
   `]
 })
-export class EmpresaFormComponent implements OnInit {
+export class VantagemFormComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private empresaService = inject(EmpresaService);
-  private route = inject(ActivatedRoute);
+  private instituicaoService = inject(InstituicaoService);
   private router = inject(Router);
   private snack = inject(MatSnackBar);
 
+  instituicoes = signal<Instituicao[]>([]);
   saving = signal(false);
-  empresaId = signal<number | null>(null);
-  isEdit = () => this.empresaId() !== null;
 
   form = this.fb.nonNullable.group({
-    nomeFantasia: ['', Validators.required],
-    cnpj: ['', [Validators.required, Validators.minLength(14), Validators.maxLength(14)]],
-    email: ['', [Validators.required, Validators.email]],
-    senha: [''],
-    descricao: [''],
+    titulo: ['', Validators.required],
+    descricao: ['', Validators.required],
+    custoMoedas: [0, [Validators.required, Validators.min(1)]],
+    quantidade: [null], 
+    cupom: ['', Validators.required],
+    validade: ['', Validators.required],
+    instituicaoId: ['ALL', Validators.required],
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.empresaId.set(Number(id));
-      this.empresaService.buscar(Number(id)).subscribe({
-        next: (e) => {
-          this.form.patchValue({
-            nomeFantasia: e.nomeFantasia,
-            cnpj: e.cnpj,
-            email: e.email,
-            descricao: e.descricao ?? '',
-            senha: '',
-          });
-        },
-        error: () => this.snack.open('Empresa não encontrada.', 'Fechar', { duration: 4000 }),
-      });
-    } else {
-      this.form.controls.senha.addValidators([Validators.required, Validators.minLength(6)]);
-    }
+    this.instituicaoService.listar().subscribe((list) => this.instituicoes.set(list));
   }
 
   onSubmit() {
@@ -219,24 +223,13 @@ export class EmpresaFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    
     this.saving.set(true);
-    const dto = this.form.getRawValue() as EmpresaRequest;
-
-    const obs = this.isEdit()
-      ? this.empresaService.atualizar(this.empresaId()!, dto)
-      : this.empresaService.cadastrar(dto);
-
-    obs.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.snack.open(this.isEdit() ? 'Empresa atualizada.' : 'Empresa cadastrada.', 'Fechar', { duration: 3000 });
-        this.router.navigate([this.isEdit() ? '/empresas' : '/login']);
-      },
-      error: (err) => {
-        this.saving.set(false);
-        const msg = err?.error?.mensagem ?? 'Erro ao salvar empresa.';
-        this.snack.open(msg, 'Fechar', { duration: 4000 });
-      },
-    });
+    
+    setTimeout(() => { 
+      this.saving.set(false);
+      this.snack.open('Vantagem publicada com sucesso!', 'Fechar', { duration: 3000 });
+      this.router.navigate(['/home']);
+    }, 1500);
   }
 }

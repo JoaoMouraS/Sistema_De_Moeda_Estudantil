@@ -19,12 +19,21 @@ export class IntroComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(private router: Router) {}
 
   ngOnInit(): void {
+    // 1. VERIFICA SE A INTRO JÁ PASSOU NESSA SESSÃO
+    if (sessionStorage.getItem('introPlayed')) {
+      this.router.navigate(['/home']);
+      return;
+    }
+    
+    // Se não passou, marca que acabou de passar para não repetir mais
+    sessionStorage.setItem('introPlayed', 'true');
+
     // Inicia o timer regressivo para ir ao Login único unificado
     this.timerId = setInterval(() => {
       this.tempoRestante--;
       if (this.tempoRestante <= 0) {
         clearInterval(this.timerId);
-        // Encaminha automaticamente para a rota de autenticação unificada do sistema
+        // Encaminha automaticamente para a home
         this.router.navigate(['/home']);
       }
     }, 1000);
@@ -38,6 +47,9 @@ export class IntroComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // Para que a animação GSAP não quebre caso o usuário já tenha sido redirecionado
+    if (sessionStorage.getItem('introPlayed') && this.tempoRestante <= 0) return;
+
     const master = gsap.timeline({ delay: 1.2 });
 
     const studentWhole = '#stud_whole';
@@ -99,7 +111,7 @@ export class IntroComponent implements OnInit, AfterViewInit, OnDestroy {
       return tl;
     };
 
-const bodyRotateIn = () => {
+    const bodyRotateIn = () => {
       const tl = gsap.timeline();
       tl.from(studentWhole, { duration: 0.5, rotation: 90, transformOrigin: "106 260", scale: 0, fillOpacity: 0.5 }, 'bodyRotation')
         .from(head, { duration: 0.5, rotation: 45, transformOrigin: "85 180", ease: "back.out" }, "bodyRotation+=0.35")

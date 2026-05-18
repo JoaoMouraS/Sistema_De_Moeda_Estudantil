@@ -2,6 +2,7 @@ package com.puc.moedaestudantil.service;
 
 import com.puc.moedaestudantil.dto.LoginRequestDTO;
 import com.puc.moedaestudantil.dto.LoginResponseDTO;
+import com.puc.moedaestudantil.model.Administrador; // <-- Importante: Adicionada a importação
 import com.puc.moedaestudantil.model.Aluno;
 import com.puc.moedaestudantil.model.EmpresaParceira;
 import com.puc.moedaestudantil.model.Professor;
@@ -34,6 +35,8 @@ public class AuthService {
 
         String tipoUsuario;
         String nome;
+        
+        // Verificação dos perfis de usuário:
         if (usuario instanceof Aluno a) {
             tipoUsuario = "ALUNO";
             nome = a.getNome();
@@ -43,6 +46,9 @@ public class AuthService {
         } else if (usuario instanceof EmpresaParceira e) {
             tipoUsuario = "EMPRESA";
             nome = e.getNomeFantasia();
+        } else if (usuario instanceof Administrador admin) { // <-- A MÁGICA ACONTECE AQUI
+            tipoUsuario = "ADMIN";
+            nome = admin.getNome();
         } else {
             tipoUsuario = "DESCONHECIDO";
             nome = usuario.getEmail();

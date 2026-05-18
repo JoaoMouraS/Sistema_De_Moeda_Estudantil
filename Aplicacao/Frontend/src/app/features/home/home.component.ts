@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -11,51 +12,52 @@ import { Router, RouterModule } from '@angular/router';
 })
 export class HomeComponent implements OnInit {
   private router = inject(Router);
+  private authService = inject(AuthService); // Utilizando seu AuthService
 
   isLoggedIn = false;
-  userRole: string | null = null; // Vai guardar se é 'ALUNO' ou 'EMPRESA'
+  userRole: string | null = null; 
+  userName: string | null = null; // Variável para exibir o nome
 
   ngOnInit(): void {
     this.checkLoginStatus();
   }
 
   checkLoginStatus() {
-    const token = localStorage.getItem('token'); 
+    this.isLoggedIn = this.authService.isAuthenticated();
     
-    if (token) {
-      this.isLoggedIn = true;
-      try {
-        // TRUQUE DE MESTRE: Decodifica o Token JWT do Spring Boot para ver a Role
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const tokenData = JSON.stringify(payload).toUpperCase(); 
+    if (this.isLoggedIn) {
+      const user = this.authService.getCurrentUser();
+      if (user) {
+        // Pega o primeiro nome para ficar mais amigável na tela
+        this.userName = user.nome.split(' ')[0]; 
         
-        // Verifica as claims do token (geralmente ROLE_ALUNO ou ROLE_EMPRESA)
-        if (tokenData.includes('ALUNO')) {
+        const tipo = user.tipoUsuario.toUpperCase();
+        if (tipo.includes('ALUNO')) {
           this.userRole = 'ALUNO';
-        } else if (tokenData.includes('EMPRESA') || tokenData.includes('PARCEIRO')) {
+        } else if (tipo.includes('EMPRESA') || tipo.includes('PARCEIRO')) {
           this.userRole = 'EMPRESA';
         } else {
-          // Se não achar no token, pega do localStorage que salvamos no Login
-          this.userRole = localStorage.getItem('userRole')?.toUpperCase() || 'ALUNO';
+          this.userRole = 'ALUNO'; // Fallback padrão
         }
-      } catch(e) {
-        this.userRole = localStorage.getItem('userRole')?.toUpperCase() || 'ALUNO';
       }
     } else {
       this.isLoggedIn = false;
       this.userRole = null;
+      this.userName = null;
     }
   }
 
   logout(event: Event) {
     event.preventDefault();
-    // Limpa a sessão
-    localStorage.removeItem('token');
-    localStorage.removeItem('userRole'); 
+    
+    // Usa o método limpo que já existe no seu serviço
+    this.authService.logout();
+    
     this.isLoggedIn = false;
     this.userRole = null;
+    this.userName = null;
     
-    // Atualiza a página ou manda pro login
+    // Atualiza a página redirecionando para o login
     this.router.navigate(['/login']);
   }
 }

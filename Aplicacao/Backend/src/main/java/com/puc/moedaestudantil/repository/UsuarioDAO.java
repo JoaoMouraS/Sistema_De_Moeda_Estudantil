@@ -1,10 +1,12 @@
 package com.puc.moedaestudantil.repository;
 
+import java.util.Optional;
+
 import com.puc.moedaestudantil.model.Usuario;
+
 import jakarta.inject.Singleton;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.util.Optional;
 
 @Singleton
 public class UsuarioDAO {
@@ -21,5 +23,11 @@ public class UsuarioDAO {
                 .setParameter("email", email)
                 .getResultStream()
                 .findFirst();
+    }
+
+    @Transactional
+    public Usuario salvar(Usuario usuario) {
+        entityManager.persist(usuario);
+        return usuario;
     }
 }

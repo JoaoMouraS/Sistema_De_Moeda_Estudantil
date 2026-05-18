@@ -56,3 +56,5 @@ export interface LoginResponse {
   usuarioId: number;
   nome: string;
 }
+
+

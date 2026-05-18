@@ -54,15 +54,21 @@ import { AuthService } from '../../core/services/auth.service';
               {{ loading() ? 'Entrando...' : 'Entrar no Sistema' }}
             </button>
           </form> 
+          
           <div class="custom-signup-panel">
             <h1 class="form__title">Cadastre-se!</h1>
             <p class="signup-subtitle">Escolha o seu perfil para criar uma conta na plataforma:</p>
             
             <button routerLink="/alunos/novo" class="submit-button">👨‍🎓 Sou Aluno</button>
-            
             <button routerLink="/empresas/novo" class="submit-button btn-empresa">🏢 Sou Empresa Parceira</button>
           </div> 
-          </div><div class="aside__area">
+
+          <a routerLink="/" class="back-to-home">
+            <i class="bx bx-home-alt"></i> Voltar para página inicial
+          </a>
+        </div>
+
+        <div class="aside__area">
           <div class="login__aside-info">
             <h4>Olá!</h4>
             <img src="https://d.top4top.io/p_1945xjz2y1.png" alt="Image">
@@ -104,11 +110,37 @@ import { AuthService } from '../../core/services/auth.service';
       min-height: 550px;
     }
 
+    /* Modificado: Adicionado position relative para segurar o botão no canto */
     .forms__area {
       flex: 1;
       display: grid;
       place-items: center;
       padding: 40px;
+      position: relative;
+    }
+
+    .back-to-home {
+      position: absolute;
+      bottom: 25px;
+      right: 350px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: #888;
+      font-size: 14px;
+      font-weight: 600;
+      transition: 0.3s ease;
+      z-index: 10;
+    }
+    
+    .back-to-home i {
+      font-size: 18px;
+    }
+
+    .back-to-home:hover {
+      color: var(--primary);
+      transform: translateY(-2px);
     }
 
     .forms__area > form, 
@@ -160,7 +192,6 @@ import { AuthService } from '../../core/services/auth.service';
     .remeber_me input { width: 15px; height: 15px; cursor: pointer; }
     .forgot_password { cursor: pointer; font-size: 14px; color: var(--primary); font-weight: 600; }
 
-    /* Submit Buttons Padronizados */
     .submit-button {
       width: 100%; max-width: 300px;
       background-color: var(--primary);
@@ -175,9 +206,8 @@ import { AuthService } from '../../core/services/auth.service';
     .btn-empresa { background-color: var(--secondary); }
     .btn-empresa:hover:not(:disabled) { background-color: var(--secondary-hover); }
 
-    /* Aside Area (Painel Azul) */
     .aside__area {
-      width: 340px; background-color: var(--primary);
+      width: 340px; background-color: var(--secondary);
       display: grid; place-items: center; padding: 40px 20px;
     }
 
@@ -197,9 +227,8 @@ import { AuthService } from '../../core/services/auth.service';
       cursor: pointer; padding: 12px 0; border-radius: 6px;
       font-size: 15px; font-weight: 600; letter-spacing: 1px; transition: 0.3s;
     }
-    .btn-outline:hover { background-color: var(--text-light); color: var(--primary); }
+    .btn-outline:hover { background-color: var(--text-light); color: var(--secondary); }
 
-    /* Logica de Animação */
     .login__form, .login__aside-info { opacity: 1; pointer-events: all; transform: translateX(0); visibility: visible; }
     .custom-signup-panel, .sign-up__aside-info { opacity: 0; pointer-events: none; transform: translateX(50px); visibility: hidden; }
 
@@ -209,14 +238,14 @@ import { AuthService } from '../../core/services/auth.service';
     .wrapper__area.sign-up__Mode-active .login__aside-info { opacity: 0; pointer-events: none; transform: translateX(-50px); visibility: hidden; }
     .wrapper__area.sign-up__Mode-active .sign-up__aside-info { opacity: 1; pointer-events: all; transform: translateX(0); visibility: visible; }
 
-    /* Responsivo */
     @media (max-width: 768px) {
       .wrapper__area { flex-direction: column; max-width: 450px; min-height: auto; }
       .aside__area { width: 100%; order: -1; padding: 30px 20px; }
       .aside__area img { display: none; }
       .aside__area h4 { font-size: 24px; margin-bottom: 5px; }
       .aside__area p { margin-bottom: 15px; }
-      .forms__area { padding: 30px 20px; }
+      .forms__area { padding: 30px 20px 60px 20px; } /* Mais padding embaixo para dar espaço ao botão */
+      .back-to-home { bottom: 15px; right: 20px; }
       .form__title { font-size: 1.8rem; margin-bottom: 20px; }
       .submit-button, .btn-outline { width: 100%; max-width: 100%; }
     }
@@ -228,49 +257,37 @@ export class LoginComponent {
   private router = inject(Router);
   private snack = inject(MatSnackBar);
 
-  // Variáveis para controle da animação UI
   isSignUpMode = false;
   showPassword = false;
-
   loading = signal(false);
   
-  // O seu formulário original não mudou nada!
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     senha: ['', [Validators.required]],
   });
 
-  // Alterna o deslize da tela (acionado pelos botões de Criar Conta / Fazer Login)
   toggleMode() {
     this.isSignUpMode = !this.isSignUpMode;
   }
 
-  // Alterna o olhinho da senha
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
 
-  // O processo de submissão ao backend continua 100% o mesmo
-onSubmit() {
+  onSubmit() {
     if (this.form.invalid) {
-      this.form.markAllAsTouched(); // Faz as bordas ficarem vermelhas se submeter vazio
+      this.form.markAllAsTouched();
       return;
     }
     
     this.loading.set(true);
     
     this.auth.login(this.form.getRawValue()).subscribe({
-      // Adicionamos o "res: any" para capturar os dados que o seu backend devolve
       next: (res: any) => {
         this.loading.set(false);
-        
-        // SEGURANÇA EXTRA: Se o seu backend devolve na resposta se é aluno ou empresa, salve aqui!
-        // Se o backend enviar algo como { token: "...", tipo: "EMPRESA" }:
         if (res && res.tipo) {
            localStorage.setItem('userRole', res.tipo);
         }
-
-        // REDIRECIONA PARA A HOME!
         this.router.navigate(['/']);
       },
       error: (err) => {
