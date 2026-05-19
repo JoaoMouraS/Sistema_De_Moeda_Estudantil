@@ -3,10 +3,12 @@ package com.puc.moedaestudantil.controller;
 import com.puc.moedaestudantil.dto.AlunoRequestDTO;
 import com.puc.moedaestudantil.dto.AlunoResponseDTO;
 import com.puc.moedaestudantil.model.Aluno;
+import com.puc.moedaestudantil.security.AuthenticatedUser;
 import com.puc.moedaestudantil.service.AlunoService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
 import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.authentication.Authentication;
 import io.micronaut.security.rules.SecurityRule;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -26,7 +28,7 @@ public class AlunoController {
     }
 
     @Get
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured({AuthenticatedUser.ROLE_ADMIN, AuthenticatedUser.ROLE_PROFESSOR})
     public HttpResponse<List<AlunoResponseDTO>> listar() {
         List<AlunoResponseDTO> dtos = alunoService.listarTodos().stream()
                 .map(AlunoResponseDTO::fromEntity)
@@ -36,18 +38,22 @@ public class AlunoController {
 
     @Get("/{id}")
     @Secured(SecurityRule.IS_AUTHENTICATED)
-    public HttpResponse<AlunoResponseDTO> buscar(Long id) {
+    public HttpResponse<AlunoResponseDTO> buscar(Long id, Authentication authentication) {
+        if (!AuthenticatedUser.isAdmin(authentication)
+                && !AuthenticatedUser.hasRole(authentication, AuthenticatedUser.ROLE_PROFESSOR)) {
+            AuthenticatedUser.requireOwnerOrAdmin(authentication, id);
+        }
         return HttpResponse.ok(AlunoResponseDTO.fromEntity(alunoService.buscarPorId(id)));
     }
 
     @Put("/{id}")
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured(AuthenticatedUser.ROLE_ADMIN)
     public HttpResponse<AlunoResponseDTO> atualizar(Long id, @Body @Valid AlunoRequestDTO dto) {
         return HttpResponse.ok(AlunoResponseDTO.fromEntity(alunoService.atualizar(id, dto)));
     }
 
     @Delete("/{id}")
-    @Secured(SecurityRule.IS_AUTHENTICATED)
+    @Secured(AuthenticatedUser.ROLE_ADMIN)
     public HttpResponse<Void> deletar(Long id) {
         alunoService.deletar(id);
         return HttpResponse.noContent();

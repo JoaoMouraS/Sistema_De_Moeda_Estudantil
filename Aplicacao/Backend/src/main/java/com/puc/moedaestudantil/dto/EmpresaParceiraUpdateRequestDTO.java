@@ -5,7 +5,6 @@ import io.micronaut.serde.annotation.Serdeable;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 @Serdeable
 public class EmpresaParceiraUpdateRequestDTO {
@@ -17,7 +16,7 @@ public class EmpresaParceiraUpdateRequestDTO {
     @Pattern(regexp = "^$|.{6,100}", message = "Senha deve ter no mínimo 6 caracteres")
     private String senha;
 
-    @NotBlank @Size(min = 14, max = 14)
+    @NotBlank @Pattern(regexp = "\\d{14}", message = "CNPJ deve conter exatamente 14 dígitos numéricos")
     private String cnpj;
 
     @NotBlank

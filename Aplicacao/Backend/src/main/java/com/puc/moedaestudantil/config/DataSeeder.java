@@ -48,7 +48,7 @@ public class DataSeeder {
         }
 
         // 2. SEED DE PROFESSOR
-        if (professorDAO.listarTodos().isEmpty()) {
+        if (professorDAO.buscarPorCpf("11122233344").isEmpty()) {
             Instituicao puc = instituicaoDAO.listarTodas().get(0);
 
             Professor prof = new Professor();

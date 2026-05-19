@@ -108,7 +108,7 @@ public class StudentService {
             aluno.getCurso(),
             aluno.getInstituicao() != null ? aluno.getInstituicao().getId() : null,
             aluno.getInstituicao() != null ? aluno.getInstituicao().getNome() : null,
-            aluno.getSaldoMoedas().longValue()
+            aluno.getSaldoMoedas()
         );
     }
 }

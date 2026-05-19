@@ -5,6 +5,7 @@ import io.micronaut.serde.annotation.Serdeable;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Serdeable
@@ -16,7 +17,7 @@ public class AlunoRequestDTO {
     @NotBlank @Size(min = 6, max = 100)
     private String senha;
 
-    @NotBlank @Size(min = 11, max = 11)
+    @NotBlank @Pattern(regexp = "\\d{11}", message = "CPF deve conter exatamente 11 dígitos numéricos")
     private String cpf;
 
     @NotBlank

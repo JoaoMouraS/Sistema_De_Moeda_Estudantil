@@ -25,11 +25,11 @@ export class EmpresaService {
     return this.http.put<EmpresaResponse>(`${API_BASE}/${id}`, dto);
   }
 
-  relatorioTrocas(id: number): Observable<import('../models/api-models').TransacaoResponse[]> {
-    return this.http.get<import('../models/api-models').TransacaoResponse[]>(`${API_BASE}/${id}/trocas`);
-  }
-
   deletar(id: number): Observable<void> {
     return this.http.delete<void>(`${API_BASE}/${id}`);
+  }
+
+  relatorioTrocas(id: number): Observable<TransacaoResponse[]> {
+    return this.http.get<TransacaoResponse[]>(`${API_BASE}/${id}/trocas`);
   }
 }

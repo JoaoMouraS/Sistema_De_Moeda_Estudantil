@@ -1,133 +1,139 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { EmpresaService } from '../../core/services/empresa.service';
 import { AuthService } from '../../core/services/auth.service';
 import { TransacaoResponse } from '../../core/models/api-models';
+import { AppShellComponent } from '../../shared/components/app-shell.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { CardComponent } from '../../shared/components/card.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 
 @Component({
   standalone: true,
   selector: 'app-empresa-relatorio',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, AppShellComponent, PageHeaderComponent, CardComponent, EmptyStateComponent],
   template: `
-    <div class="relatorio-container">
-      <header class="relatorio-header">
-        <a routerLink="/home" class="back-link"><i class='bx bx-arrow-back'></i> Voltar</a>
-        <div class="header-copy">
-          <h1>Relatório de Trocas</h1>
-          <p class="subtitle">Histórico de alunos que resgataram vantagens oferecidas pela sua empresa.</p>
+    <app-shell>
+      <div class="container">
+        <app-page-header
+          title="Relatório de trocas"
+          subtitle="Histórico de alunos que resgataram vantagens da sua empresa."
+        ></app-page-header>
+
+        <div class="grid-3 metrics">
+          <app-card>
+            <div class="metric">
+              <span class="material-icons-outlined metric__icon">receipt_long</span>
+              <div>
+                <div class="metric__label">Total de trocas</div>
+                <div class="metric__value">{{ trocas().length }}</div>
+              </div>
+            </div>
+          </app-card>
+          <app-card>
+            <div class="metric">
+              <span class="material-icons-outlined metric__icon">monetization_on</span>
+              <div>
+                <div class="metric__label">Moedas resgatadas</div>
+                <div class="metric__value">{{ totalMoedas() }}</div>
+              </div>
+            </div>
+          </app-card>
+          <app-card>
+            <div class="metric">
+              <span class="material-icons-outlined metric__icon">person</span>
+              <div>
+                <div class="metric__label">Alunos atendidos</div>
+                <div class="metric__value">{{ alunosUnicos() }}</div>
+              </div>
+            </div>
+          </app-card>
         </div>
-        <div class="header-badge">Total de registros: {{ trocas().length }}</div>
-      </header>
 
-      <main class="relatorio-main">
-        <section *ngIf="loading()" class="loading">Carregando histórico de trocas...</section>
-
-        <table *ngIf="!loading() && trocas().length > 0" class="relatorio-table">
-          <thead>
-            <tr>
-              <th>Data/Hora</th>
-              <th>Aluno</th>
-              <th>Descrição</th>
-              <th>Tipo</th>
-              <th class="coins">Moedas</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let t of trocas()">
-              <td>{{ t.dataHora | date:'short' }}</td>
-              <td>{{ t.alunoNome ?? ('#' + (t.alunoId ?? '-')) }}</td>
-              <td>{{ t.descricao }}</td>
-              <td>{{ t.tipo }}</td>
-              <td class="coins">{{ t.valor }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div *ngIf="!loading() && trocas().length === 0" class="empty-state">
-          <p>Nenhuma troca registrada para sua empresa ainda.</p>
-          <span>Quando um aluno resgatar uma vantagem, ela aparecerá aqui automaticamente.</span>
-        </div>
-      </main>
-    </div>
+        <app-card title="Histórico" [padded]="false">
+          @if (loading()) {
+            <div class="loading-row">
+              <span class="material-icons spin">progress_activity</span>
+              <span>Carregando…</span>
+            </div>
+          } @else if (trocas().length === 0) {
+            <app-empty-state
+              icon="receipt_long"
+              title="Nenhuma troca registrada"
+              description="Quando um aluno resgatar uma vantagem da sua empresa, o registro aparecerá aqui."
+            ></app-empty-state>
+          } @else {
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Data/Hora</th>
+                    <th>Aluno</th>
+                    <th>Descrição</th>
+                    <th class="num">Moedas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let t of trocas()">
+                    <td>{{ t.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ t.alunoNome ?? ('#' + (t.alunoId ?? '-')) }}</td>
+                    <td>{{ t.descricao }}</td>
+                    <td class="num accent">{{ t.valor }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
+        </app-card>
+      </div>
+    </app-shell>
   `,
-  styles: [
-    `
-    .relatorio-container {
-      max-width: 1040px; margin: 32px auto; padding: 20px;
+  styles: [`
+    .metrics { margin-bottom: var(--space-6); }
+    .metric { display: flex; align-items: center; gap: var(--space-4); }
+    .metric__icon {
+      width: 48px; height: 48px;
+      border-radius: var(--radius-md);
+      background: var(--color-brand-soft);
+      color: var(--color-brand);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 24px !important;
     }
-    .relatorio-header {
-      display: grid; grid-template-columns: auto auto; align-items: center; gap: 20px;
-      padding: 24px 28px; border-radius: 18px; background: var(--bg-card);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-    }
-    .header-copy { display: grid; gap: 6px; }
-    .relatorio-header h1 { margin: 0; font-size: 1.9rem; color: var(--text-dark); }
-    .subtitle { margin: 0; color: var(--text-muted); font-size: 0.98rem; line-height: 1.5; }
-    .header-badge {
-      justify-self: end; padding: 12px 18px; border-radius: 999px;
-      background: rgba(27, 113, 167, 0.12); color: var(--text-dark); font-weight: 700;
-    }
-    .back-link { color: var(--secondary); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
-    .back-link:hover { opacity: 0.88; }
+    .metric__label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); }
+    .metric__value { font-size: var(--text-2xl); font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
 
-    .relatorio-main {
-      margin-top: 24px; padding: 28px; border-radius: 18px; background: var(--bg-card);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.06);
-    }
-    .loading,
-    .empty-state {
-      min-height: 160px; display: grid; place-items: center; color: var(--text-muted);
-      font-size: 1rem; text-align: center;
-    }
-    .empty-state span { display: block; margin-top: 10px; font-size: 0.95rem; color: var(--text-muted); }
+    .loading-row { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-7); color: var(--color-text-muted); }
+    .spin { animation: spin 1s linear infinite; font-size: 20px !important; color: var(--color-brand); }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .relatorio-table {
-      width: 100%; border-collapse: separate; border-spacing: 0 10px;
-      margin-top: 10px;
-    }
-    .relatorio-table th,
-    .relatorio-table td {
-      padding: 16px 18px; background: var(--bg-main); border: none;
-    }
-    .relatorio-table thead th {
-      background: transparent; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
-      font-size: 0.82rem; font-weight: 700; border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-    .relatorio-table tbody tr { box-shadow: 0 8px 20px rgba(0,0,0,0.04); border-radius: 14px; }
-    .relatorio-table tbody tr:hover { transform: translateY(-1px); transition: transform 0.2s ease; }
-    .relatorio-table td { color: var(--text-dark); font-size: 0.95rem; }
-    .coins { text-align: right; font-weight: 700; }
-
-    @media (max-width: 860px) {
-      .relatorio-header { grid-template-columns: 1fr; text-align: left; }
-      .header-badge { justify-self: start; }
-    }
-    @media (max-width: 680px) {
-      .relatorio-main { padding: 20px 18px; }
-      .relatorio-table th, .relatorio-table td { padding: 14px 12px; }
-    }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .table th, .table td { padding: var(--space-3) var(--space-5); text-align: left; border-bottom: 1px solid var(--color-border); }
+    .table th { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 600; background: var(--color-surface-alt); }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .accent { color: var(--color-brand); font-weight: 700; }
   `]
 })
 export class EmpresaRelatorioComponent implements OnInit {
   private empresaService = inject(EmpresaService);
   private auth = inject(AuthService);
 
-  loading = signal(true);
-  trocas = signal<TransacaoResponse[]>([]);
+  protected loading = signal(true);
+  protected trocas = signal<TransacaoResponse[]>([]);
+
+  protected totalMoedas = computed(() => this.trocas().reduce((sum, t) => sum + (t.valor || 0), 0));
+  protected alunosUnicos = computed(() => new Set(this.trocas().map((t) => t.alunoId).filter(Boolean)).size);
 
   ngOnInit(): void {
     const user = this.auth.getCurrentUser();
-    if (!user || user.tipoUsuario?.toUpperCase() !== 'EMPRESA') {
+    if (!user || user.tipoUsuario !== 'EMPRESA') {
       this.loading.set(false);
-      this.trocas.set([]);
       return;
     }
-
-    const id = user.id;
-    this.empresaService.relatorioTrocas(id).subscribe({
-      next: (res) => { this.trocas.set(res); this.loading.set(false); },
-      error: () => { this.trocas.set([]); this.loading.set(false); }
+    this.empresaService.relatorioTrocas(user.id).subscribe({
+      next: (list) => { this.trocas.set(list); this.loading.set(false); },
+      error: () => this.loading.set(false),
     });
   }
 }

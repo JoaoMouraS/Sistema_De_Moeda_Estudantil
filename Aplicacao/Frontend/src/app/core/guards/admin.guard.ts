@@ -1,28 +1,30 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../services/auth.service';
 
-export const adminGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
   const router = inject(Router);
   const snack = inject(MatSnackBar);
 
-  const user = authService.getCurrentUser();
-  
-  if (user && user.tipoUsuario?.toUpperCase() === 'ADMIN') {
-    return true; // Deixa passar
-  }
+  const user = auth.getCurrentUser();
+  const role = user?.tipoUsuario?.toUpperCase();
 
-  // Se for empresa, redireciona para o painel/edição da própria empresa
-  if (user && user.tipoUsuario?.toUpperCase() === 'EMPRESA') {
-    snack.open('Área reservada a administradores. Redirecionando para o painel da sua empresa.', 'Fechar', { duration: 3000 });
-    router.navigate(['/empresas/editar']);
-    return false;
-  }
+  if (role === 'ADMIN') return true;
 
-  // Bloqueia e redireciona para home por padrão
-  snack.open('Área restrita a administradores do sistema.', 'Fechar', { duration: 4000 });
-  router.navigate(['/home']);
+  const message: Record<string, string> = {
+    EMPRESA: 'Área restrita a administradores. Redirecionando para o painel da empresa.',
+    PROFESSOR: 'Área restrita a administradores. Redirecionando para o painel do professor.',
+    ALUNO: 'Área restrita a administradores.',
+  };
+  snack.open(message[role ?? ''] ?? 'Área restrita a administradores.', 'Fechar', { duration: 3000 });
+
+  const target: Record<string, string> = {
+    EMPRESA: '/empresas/editar',
+    PROFESSOR: '/professor/painel',
+    ALUNO: '/alunos/painel',
+  };
+  router.navigate([target[role ?? ''] ?? '/home']);
   return false;
 };

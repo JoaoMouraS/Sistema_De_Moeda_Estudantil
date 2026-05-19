@@ -4,251 +4,344 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/services/auth.service';
+import { UserRole } from '../../core/models/api-models';
+import { ButtonComponent } from '../../shared/components/button.component';
+import { FormFieldComponent } from '../../shared/components/form-field.component';
+
+const ROLE_ROUTES: Record<UserRole, string> = {
+  ALUNO: '/alunos/painel',
+  PROFESSOR: '/professor/painel',
+  EMPRESA: '/empresas/vantagens',
+  ADMIN: '/alunos',
+};
 
 @Component({
   standalone: true,
   selector: 'app-login',
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, ButtonComponent, FormFieldComponent],
   template: `
-    <div class="host-wrapper">
-      <div class="wrapper__area" [class.sign-up__Mode-active]="isSignUpMode">
-        
-        <div class="forms__area">
-          
-          <form class="login__form" [formGroup]="form" (ngSubmit)="onSubmit()">
-            <h1 class="form__title">Acessar!</h1>
-            
-            <div class="input__group" [class.formError]="form.get('email')?.invalid && form.get('email')?.touched">
-              <label class="field">
-                <input type="email" formControlName="email" placeholder="Email / CPF" autocomplete="email">
-              </label>
-              <span class="input__icon"><i class="bx bx-user"></i></span>
-              <small class="input__error_message">Email ou CPF inválido</small>
+    <div class="auth">
+      <aside class="auth__aside" aria-hidden="true">
+        <a routerLink="/home" class="auth__brand">
+          <span class="brand-mark">SC</span>
+          Student Coins
+        </a>
+
+        <div class="auth__center">
+          <div class="auth__tagline">
+            <h2>Reconheça mérito.</h2>
+            <h2>Recompense conquista.</h2>
+          </div>
+
+          <div class="coins-stage">
+            <span class="coin coin--lg">M$</span>
+            <span class="coin coin--md">M$</span>
+            <span class="coin coin--sm">M$</span>
+            <span class="material-icons-outlined coins-stage__hint coins-stage__hint--left">savings</span>
+            <span class="material-icons-outlined coins-stage__hint coins-stage__hint--right">redeem</span>
+          </div>
+        </div>
+
+        <p class="auth__hint">
+          Plataforma da disciplina de Laboratório de Desenvolvimento de Software — PUC Minas.
+        </p>
+      </aside>
+
+      <section class="auth__panel">
+        <div class="auth__panel-inner">
+          <header class="auth__head">
+            <h1>{{ mode() === 'login' ? 'Entrar' : 'Criar conta' }}</h1>
+            <p>{{ mode() === 'login' ? 'Acesse sua conta para gerenciar suas moedas.' : 'Escolha o perfil que melhor descreve você.' }}</p>
+          </header>
+
+          <ng-container *ngIf="mode() === 'login'; else signup">
+            <form class="auth__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+              <app-form-field
+                label="E-mail"
+                [required]="true"
+                [hasError]="!!(form.get('email')?.invalid && form.get('email')?.touched)"
+                error="Informe um e-mail válido"
+              >
+                <input type="email" formControlName="email" placeholder="voce@exemplo.com" autocomplete="email">
+              </app-form-field>
+
+              <app-form-field
+                label="Senha"
+                [required]="true"
+                [hasError]="!!(form.get('senha')?.invalid && form.get('senha')?.touched)"
+                error="Senha obrigatória"
+              >
+                <div class="password-wrap">
+                  <input [type]="showPassword() ? 'text' : 'password'" formControlName="senha" placeholder="••••••••" autocomplete="current-password">
+                  <button type="button" class="password-toggle" (click)="showPassword.set(!showPassword())" [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'">
+                    <span class="material-icons">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
+                  </button>
+                </div>
+              </app-form-field>
+
+              <app-button variant="primary" size="lg" type="submit" [full]="true" [loading]="loading()" [disabled]="form.invalid">
+                Entrar
+              </app-button>
+
+              <p class="auth__switch">
+                Ainda não tem conta?
+                <button type="button" class="link" (click)="mode.set('signup')">Criar agora</button>
+              </p>
+            </form>
+          </ng-container>
+
+          <ng-template #signup>
+            <div class="auth__signup">
+              <a routerLink="/alunos/novo" class="role-card">
+                <span class="material-icons role-card__icon">school</span>
+                <div>
+                  <strong>Sou Aluno</strong>
+                  <p>Cadastre-se para receber e gastar moedas estudantis.</p>
+                </div>
+                <span class="material-icons role-card__chevron">chevron_right</span>
+              </a>
+
+              <a routerLink="/empresas/novo" class="role-card">
+                <span class="material-icons role-card__icon">business</span>
+                <div>
+                  <strong>Sou Empresa Parceira</strong>
+                  <p>Ofereça vantagens em troca de moedas dos alunos.</p>
+                </div>
+                <span class="material-icons role-card__chevron">chevron_right</span>
+              </a>
+
+              <div class="role-card role-card--info">
+                <span class="material-icons role-card__icon">badge</span>
+                <div>
+                  <strong>Sou Professor</strong>
+                  <p>Professores são cadastrados pela instituição. Faça login com as credenciais recebidas.</p>
+                </div>
+              </div>
+
+              <p class="auth__switch">
+                Já tem conta?
+                <button type="button" class="link" (click)="mode.set('login')">Entrar</button>
+              </p>
             </div>
+          </ng-template>
 
-            <div class="input__group" [class.formError]="form.get('senha')?.invalid && form.get('senha')?.touched">
-              <label class="field">
-                <input [type]="showPassword ? 'text' : 'password'" formControlName="senha" placeholder="Senha" autocomplete="current-password">
-              </label>
-              <span class="input__icon"><i class="bx bx-lock"></i></span>
-              <span class="showHide__Icon" (click)="togglePassword()">
-                <i class="bx" [class.bx-show]="showPassword" [class.bx-hide]="!showPassword"></i>
-              </span>
-              <small class="input__error_message">A senha é obrigatória</small>
-            </div>
-
-            <div class="form__actions">
-              <label for="checkboxInput" class="remeber_me">
-                <input type="checkbox" id="checkboxInput">
-                <span class="checkmark"></span>
-                <span>Lembrar-me</span>
-              </label>
-              <div class="forgot_password">Esqueceu a senha?</div>
-            </div>
-
-            <button type="submit" class="submit-button" [disabled]="form.invalid || loading()">
-              {{ loading() ? 'Entrando...' : 'Entrar no Sistema' }}
-            </button>
-          </form> 
-          
-          <div class="custom-signup-panel">
-            <h1 class="form__title">Cadastre-se!</h1>
-            <p class="signup-subtitle">Escolha o seu perfil para criar uma conta na plataforma:</p>
-            
-            <button routerLink="/alunos/novo" class="submit-button">👨‍🎓 Sou Aluno</button>
-            <button routerLink="/empresas/novo" class="submit-button btn-empresa">🏢 Sou Empresa Parceira</button>
-          </div> 
-
-          <a routerLink="/" class="back-to-home">
-            <i class="bx bx-home-alt"></i> Voltar para página inicial
+          <a routerLink="/home" class="auth__back">
+            <span class="material-icons">arrow_back</span>
+            Voltar ao início
           </a>
         </div>
-
-        <div class="aside__area">
-          <div class="login__aside-info">
-            <h4>Olá!</h4>
-            <img src="https://d.top4top.io/p_1945xjz2y1.png" alt="Image">
-            <p>Ainda não faz parte do Student Coins? Escolha seu perfil e cadastre-se!</p>
-            <button type="button" class="btn-outline" (click)="toggleMode()">Criar Conta</button>
-          </div>
-          <div class="sign-up__aside-info">
-            <h4>Bem-vindo!</h4>
-            <img src="https://e.top4top.io/p_1945sidbp2.png" alt="Image">
-            <p>Para se conectar conosco, faça login com suas credenciais.</p>
-            <button type="button" class="btn-outline" (click)="toggleMode()">Fazer Login</button>
-          </div>
-        </div>
-        
-      </div>
+      </section>
     </div>
   `,
   styles: [`
-    @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
-
-    .host-wrapper {
+    :host { display: block; min-height: 100vh; }
+    .auth {
       min-height: 100vh;
-      background-color: var(--bg-main);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .wrapper__area {
-      width: 100%;
-      max-width: 900px;
-      background-color: var(--bg-card);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-      border-radius: 12px;
-      display: flex;
-      flex-direction: row;
-      overflow: hidden;
-      min-height: 550px;
-    }
-
-    /* Modificado: Adicionado position relative para segurar o botão no canto */
-    .forms__area {
-      flex: 1;
       display: grid;
-      place-items: center;
-      padding: 40px;
-      position: relative;
+      grid-template-columns: 5fr 7fr;
+      background: var(--color-bg-app);
+    }
+    @media (max-width: 880px) {
+      .auth { grid-template-columns: 1fr; }
+      .auth__aside { display: none; }
     }
 
-    .back-to-home {
+    .auth__aside {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(165deg, #1968a3 0%, var(--color-brand) 55%, #103e63 100%);
+      color: #fff;
+      padding: var(--space-8);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .auth__aside::before {
+      content: '';
       position: absolute;
-      bottom: 25px;
-      right: 350px;
+      top: -120px; right: -120px;
+      width: 360px; height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(242, 177, 57, 0.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .auth__center {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: var(--space-7);
+    }
+    .auth__tagline { display: flex; flex-direction: column; gap: var(--space-1); }
+
+    .coins-stage {
+      position: relative;
+      width: 280px;
+      height: 160px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      text-decoration: none;
-      color: #888;
-      font-size: 14px;
-      font-weight: 600;
-      transition: 0.3s ease;
-      z-index: 10;
+      justify-content: center;
     }
-    
-    .back-to-home i {
-      font-size: 18px;
+    .coin {
+      position: absolute;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+      color: #1a1a1a;
+      font-weight: 800;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.3), inset 0 -3px 0 rgba(0,0,0,0.12);
+      animation: float-decor 4.5s ease-in-out infinite;
+    }
+    .coin--lg { width: 88px; height: 88px; font-size: 22px; z-index: 3; animation-delay: 0s; }
+    .coin--md { width: 60px; height: 60px; font-size: 15px; transform: translate(-78px, 20px); z-index: 2; animation-delay: -1.5s; }
+    .coin--sm { width: 50px; height: 50px; font-size: 13px; transform: translate(72px, 24px); z-index: 2; animation-delay: -3s; opacity: .9; }
+
+    .coins-stage__hint {
+      position: absolute;
+      color: rgba(255,255,255,0.28);
+      font-size: 36px !important;
+      animation: float-decor 5.5s ease-in-out infinite;
+    }
+    .coins-stage__hint--left { left: 0; top: 10%; animation-delay: -2s; }
+    .coins-stage__hint--right { right: 0; bottom: 8%; animation-delay: -4s; }
+
+    @keyframes float-decor {
+      0%, 100% { transform-origin: center; }
+      50% { translate: 0 -8px; }
+    }
+    .coin--md { animation: float-md 4.5s ease-in-out infinite; }
+    .coin--sm { animation: float-sm 4.5s ease-in-out infinite; }
+    @keyframes float-md {
+      0%, 100% { transform: translate(-78px, 20px); }
+      50% { transform: translate(-78px, 12px); }
+    }
+    @keyframes float-sm {
+      0%, 100% { transform: translate(72px, 24px); }
+      50% { transform: translate(72px, 16px); }
+    }
+    .auth__brand {
+      color: #fff;
+      font-weight: 700;
+      font-size: var(--text-xl);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .brand-mark {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.16);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800;
+    }
+    .auth__tagline h2 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .auth__tagline h2 + h2 { color: rgba(255,255,255,0.75); }
+    .auth__hint {
+      color: rgba(255,255,255,0.75);
+      font-size: var(--text-sm);
+      max-width: 320px;
     }
 
-    .back-to-home:hover {
-      color: var(--primary);
-      transform: translateY(-2px);
+    .auth__panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8) var(--space-6);
     }
-
-    .forms__area > form, 
-    .forms__area > .custom-signup-panel {
-      grid-area: 1 / 1;
+    .auth__panel-inner {
       width: 100%;
-      transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-7);
+    }
+    .auth__head h1 {
+      font-size: var(--text-3xl);
+      letter-spacing: -0.02em;
+      font-weight: 700;
+    }
+    .auth__head p {
+      margin-top: var(--space-2);
+      color: var(--color-text-muted);
     }
 
-    .custom-signup-panel { text-align: center; }
-
-    .signup-subtitle { color: #666; margin-bottom: 30px; font-size: 15px; }
-
-    .form__title {
-      font-size: 2.2rem; font-weight: bold; text-transform: uppercase;
-      margin-bottom: 30px; color: var(--text-dark);
+    .auth__form { display: flex; flex-direction: column; gap: var(--space-5); }
+    .password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute;
+      top: 50%; right: var(--space-2);
+      transform: translateY(-50%);
+      padding: var(--space-1) var(--space-2);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: inline-flex; align-items: center;
+      border-radius: var(--radius-sm);
     }
+    .password-toggle:hover { color: var(--color-brand); background: var(--color-brand-soft); }
 
-    .input__group { position: relative; width: 100%; margin: 15px 0; }
-    .input__group .field { position: relative; width: 100%; display: block; overflow: hidden; }
-
-    .input__group .field::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0; width: 100%; height: 2px;
-      background-color: var(--primary);
-      transform: translateX(-100%); transition: 0.3s;
+    .auth__switch {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      text-align: center;
     }
-
-    .input__group .field:focus-within::after { transform: translateX(0); }
-
-    .input__group input {
-      outline: none; width: 100%; border: none; padding: 15px 40px; background: transparent;
-      border-bottom: 2px solid var(--input-border); font-size: 15px; color: var(--text-dark);
+    .link {
+      color: var(--color-brand);
+      font-weight: 600;
+      padding: 0 var(--space-1);
+      cursor: pointer;
     }
+    .link:hover { text-decoration: underline; }
 
-    .formError .field input { border-color: var(--error); }
-    .input__group > span { position: absolute; font-size: 20px; color: var(--input-border); transition: 0.3s; }
-    .input__group input:focus ~ span { color: var(--primary); }
-    .input__group .input__icon { top: 13px; left: 10px; pointer-events: none; }
-    .input__group .showHide__Icon { top: 13px; right: 10px; cursor: pointer; }
-
-    .input__error_message {
-      display: block; color: var(--error); margin: 4px 10px 0;
-      opacity: 0; pointer-events: none; font-size: 12px;
+    .auth__signup { display: flex; flex-direction: column; gap: var(--space-3); }
+    .role-card {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      transition: border-color .15s, box-shadow .15s, transform .1s;
+      color: var(--color-text);
     }
-    .formError .input__error_message { opacity: 1; }
-
-    .form__actions { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 25px; padding: 0 10px; }
-    .remeber_me { cursor: pointer; font-size: 14px; color: #666; display: flex; align-items: center; gap: 8px; }
-    .remeber_me input { width: 15px; height: 15px; cursor: pointer; }
-    .forgot_password { cursor: pointer; font-size: 14px; color: var(--primary); font-weight: 600; }
-
-    .submit-button {
-      width: 100%; max-width: 300px;
-      background-color: var(--primary);
-      color: var(--text-light);
-      cursor: pointer; padding: 15px 0; border: none; border-radius: 6px;
-      font-size: 16px; font-weight: 600; letter-spacing: 1px;
-      margin: 15px auto; display: block; transition: 0.3s; text-transform: uppercase;
+    .role-card:hover {
+      border-color: var(--color-brand);
+      box-shadow: var(--shadow-sm);
     }
-    .submit-button:disabled { background-color: #ccc; cursor: not-allowed; }
-    .submit-button:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    
-    .btn-empresa { background-color: var(--secondary); }
-    .btn-empresa:hover:not(:disabled) { background-color: var(--secondary-hover); }
-
-    .aside__area {
-      width: 340px; background-color: var(--secondary);
-      display: grid; place-items: center; padding: 40px 20px;
+    .role-card:active { transform: translateY(1px); }
+    .role-card__icon {
+      width: 42px; height: 42px;
+      border-radius: var(--radius-md);
+      background: var(--color-brand-soft);
+      color: var(--color-brand);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
+    .role-card strong { display: block; font-size: var(--text-base); }
+    .role-card p { font-size: var(--text-sm); margin-top: 2px; }
+    .role-card__chevron { color: var(--color-text-muted); margin-left: auto; }
+    .role-card--info { cursor: default; }
+    .role-card--info:hover { border-color: var(--color-border); box-shadow: none; }
+    .role-card--info .role-card__icon { background: var(--color-surface-alt); color: var(--color-text-muted); }
 
-    .aside__area > div {
-      grid-area: 1 / 1; width: 100%; text-align: center;
-      transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-      display: flex; flex-direction: column; align-items: center;
+    .auth__back {
+      align-self: center;
+      display: inline-flex; align-items: center; gap: var(--space-1);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
     }
-
-    .aside__area h4 { color: var(--text-light); letter-spacing: 2px; font-size: 28px; margin-bottom: 15px; }
-    .aside__area img { width: 80%; max-width: 200px; pointer-events: none; margin-bottom: 15px; }
-    .aside__area p { color: var(--text-light); font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
-
-    .btn-outline {
-      background-color: transparent; width: 80%;
-      border: 2px solid var(--text-light); color: var(--text-light);
-      cursor: pointer; padding: 12px 0; border-radius: 6px;
-      font-size: 15px; font-weight: 600; letter-spacing: 1px; transition: 0.3s;
-    }
-    .btn-outline:hover { background-color: var(--text-light); color: var(--secondary); }
-
-    .login__form, .login__aside-info { opacity: 1; pointer-events: all; transform: translateX(0); visibility: visible; }
-    .custom-signup-panel, .sign-up__aside-info { opacity: 0; pointer-events: none; transform: translateX(50px); visibility: hidden; }
-
-    .wrapper__area.sign-up__Mode-active .login__form { opacity: 0; pointer-events: none; transform: translateX(-50px); visibility: hidden; }
-    .wrapper__area.sign-up__Mode-active .custom-signup-panel { opacity: 1; pointer-events: all; transform: translateX(0); visibility: visible; }
-
-    .wrapper__area.sign-up__Mode-active .login__aside-info { opacity: 0; pointer-events: none; transform: translateX(-50px); visibility: hidden; }
-    .wrapper__area.sign-up__Mode-active .sign-up__aside-info { opacity: 1; pointer-events: all; transform: translateX(0); visibility: visible; }
-
-    @media (max-width: 768px) {
-      .wrapper__area { flex-direction: column; max-width: 450px; min-height: auto; }
-      .aside__area { width: 100%; order: -1; padding: 30px 20px; }
-      .aside__area img { display: none; }
-      .aside__area h4 { font-size: 24px; margin-bottom: 5px; }
-      .aside__area p { margin-bottom: 15px; }
-      .forms__area { padding: 30px 20px 60px 20px; } /* Mais padding embaixo para dar espaço ao botão */
-      .back-to-home { bottom: 15px; right: 20px; }
-      .form__title { font-size: 1.8rem; margin-bottom: 20px; }
-      .submit-button, .btn-outline { width: 100%; max-width: 100%; }
-    }
+    .auth__back .material-icons { font-size: 18px; }
+    .auth__back:hover { color: var(--color-brand); }
   `]
 })
 export class LoginComponent {
@@ -257,43 +350,31 @@ export class LoginComponent {
   private router = inject(Router);
   private snack = inject(MatSnackBar);
 
-  isSignUpMode = false;
-  showPassword = false;
-  loading = signal(false);
-  
-  form = this.fb.nonNullable.group({
+  protected mode = signal<'login' | 'signup'>('login');
+  protected showPassword = signal(false);
+  protected loading = signal(false);
+
+  protected form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     senha: ['', [Validators.required]],
   });
 
-  toggleMode() {
-    this.isSignUpMode = !this.isSignUpMode;
-  }
-
-  togglePassword() {
-    this.showPassword = !this.showPassword;
-  }
-
-  onSubmit() {
+  onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    
     this.loading.set(true);
-    
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: (res: any) => {
+      next: (res) => {
         this.loading.set(false);
-        if (res && res.tipo) {
-           localStorage.setItem('userRole', res.tipo);
-        }
-        this.router.navigate(['/']);
+        const target = ROLE_ROUTES[res.tipoUsuario as UserRole] ?? '/home';
+        this.router.navigate([target]);
       },
       error: (err) => {
         this.loading.set(false);
         const msg = err?.error?.mensagem ?? 'Falha ao autenticar.';
-        this.snack.open(msg, 'Fechar', { duration: 4000 });
+        this.snack.open(msg, 'Fechar', { duration: 4000, panelClass: ['snackbar-error'] });
       },
     });
   }

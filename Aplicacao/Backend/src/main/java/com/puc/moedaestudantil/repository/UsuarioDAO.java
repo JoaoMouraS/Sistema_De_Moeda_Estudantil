@@ -26,6 +26,14 @@ public class UsuarioDAO {
     }
 
     @Transactional
+    public boolean existePorEmail(String email) {
+        Long count = entityManager.createQuery("SELECT COUNT(u) FROM Usuario u WHERE u.email = :email", Long.class)
+                .setParameter("email", email)
+                .getSingleResult();
+        return count > 0;
+    }
+
+    @Transactional
     public Usuario salvar(Usuario usuario) {
         entityManager.persist(usuario);
         return usuario;

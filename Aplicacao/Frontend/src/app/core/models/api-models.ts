@@ -1,3 +1,5 @@
+export type UserRole = 'ALUNO' | 'PROFESSOR' | 'EMPRESA' | 'ADMIN';
+
 export interface Instituicao {
   id: number;
   nome: string;
@@ -52,33 +54,63 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  tipoUsuario: 'ALUNO' | 'PROFESSOR' | 'EMPRESA' | string;
+  tipoUsuario: UserRole;
   usuarioId: number;
   nome: string;
 }
 
+export type TipoTransacaoApi = 'ENVIO_MOEDA' | 'RESGATE_VANTAGEM';
+
 export interface TransacaoResponse {
   id: number;
-  dataHora: string | Date;
-  descricao: string;
-  tipo: 'CREDITO' | 'DEBITO';
+  tipo: TipoTransacaoApi;
   valor: number;
-  alunoId?: number | null;
-  alunoNome?: string | null;
+  dataHora: string;
+  descricao: string;
+  alunoId: number | null;
+  alunoNome: string | null;
 }
 
-export type TransactionType = 'CREDITO' | 'DEBITO';
-
-export interface Transaction {
+export interface StudentProfile {
   id: number;
-  dataHora: string | Date;
-  descricao: string;
-  tipo: TransactionType;
-  valor: number;
-  alunoId?: number | null;
-  alunoNome?: string | null;
+  nome: string;
+  email: string;
+  cpf: string;
+  rg: string;
+  endereco?: string;
+  curso: string;
+  instituicaoId: number;
+  instituicaoNome: string;
+  saldoMoedas: number;
+}
+
+export interface UpdateProfileRequest {
+  nome: string;
+  email: string;
+  endereco?: string;
+  senha?: string;
+}
+
+export interface ProfessorResponse {
+  id: number;
+  nome: string;
+  email: string;
+  cpf: string;
+  departamento: string;
+  instituicaoId: number;
+  instituicaoNome: string;
+  saldoMoedas: number;
+}
+
+export interface DistribuirMoedasRequest {
+  alunoId: number;
+  quantidade: number;
+  mensagem: string;
+}
+
+export interface ExtratoResponse {
+  saldoAtual: number;
+  transacoes: TransacaoResponse[];
 }
 
 export type Student = AlunoResponse;
-
-

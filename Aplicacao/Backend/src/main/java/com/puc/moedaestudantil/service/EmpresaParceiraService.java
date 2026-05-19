@@ -5,6 +5,7 @@ import com.puc.moedaestudantil.dto.EmpresaParceiraUpdateRequestDTO;
 import com.puc.moedaestudantil.model.EmpresaParceira;
 import com.puc.moedaestudantil.repository.EmpresaParceiraDAO;
 import com.puc.moedaestudantil.repository.TransacaoDAO;
+import com.puc.moedaestudantil.repository.UsuarioDAO;
 import com.puc.moedaestudantil.dto.TransacaoResponseDTO;
 import com.puc.moedaestudantil.security.PasswordEncoder;
 import jakarta.inject.Inject;
@@ -19,6 +20,9 @@ public class EmpresaParceiraService {
     private EmpresaParceiraDAO empresaDAO;
 
     @Inject
+    private UsuarioDAO usuarioDAO;
+
+    @Inject
     private PasswordEncoder passwordEncoder;
 
     @Inject
@@ -27,6 +31,9 @@ public class EmpresaParceiraService {
     public EmpresaParceira cadastrar(EmpresaParceiraRequestDTO dto) {
         if (empresaDAO.existePorCnpj(dto.getCnpj())) {
             throw new IllegalArgumentException("CNPJ já cadastrado.");
+        }
+        if (usuarioDAO.existePorEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email já cadastrado.");
         }
 
         EmpresaParceira empresa = new EmpresaParceira();
@@ -53,6 +60,9 @@ public class EmpresaParceiraService {
 
         if (!empresa.getCnpj().equals(dto.getCnpj()) && empresaDAO.existePorCnpj(dto.getCnpj())) {
             throw new IllegalArgumentException("CNPJ já cadastrado por outra empresa.");
+        }
+        if (!empresa.getEmail().equals(dto.getEmail()) && usuarioDAO.existePorEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email já cadastrado por outro usuário.");
         }
 
         empresa.setEmail(dto.getEmail());

@@ -23,6 +23,11 @@ public class ProfessorDAO {
     }
 
     @Transactional
+    public Professor atualizar(Professor professor) {
+        return entityManager.merge(professor);
+    }
+
+    @Transactional
     public Optional<Professor> buscarPorId(Long id) {
         return Optional.ofNullable(entityManager.find(Professor.class, id));
     }

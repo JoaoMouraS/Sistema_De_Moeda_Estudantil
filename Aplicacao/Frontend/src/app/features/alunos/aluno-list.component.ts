@@ -1,236 +1,163 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { AlunoService } from '../../core/services/aluno.service';
-import { AuthService } from '../../core/services/auth.service';
 import { AlunoResponse } from '../../core/models/api-models';
+import { AppShellComponent } from '../../shared/components/app-shell.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { CardComponent } from '../../shared/components/card.component';
+import { ButtonComponent } from '../../shared/components/button.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 
 @Component({
   standalone: true,
   selector: 'app-aluno-list',
-  imports: [
-    CommonModule,
-    RouterLink,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressSpinnerModule,
-    MatTooltipModule
-  ],
+  imports: [CommonModule, RouterLink, AppShellComponent, PageHeaderComponent, CardComponent, ButtonComponent, EmptyStateComponent],
   template: `
-    <div class="dashboard-container">
-      
-      <nav class="admin-navbar">
-        <div class="nav-brand">
-          <i class='bx bx-shield-quarter'></i>
-          StudentCoins <span>Admin</span>
-        </div>
-        <div class="nav-links">
-          <a routerLink="/alunos" class="active"><i class='bx bxs-graduation'></i> Alunos</a>
-          <a routerLink="/empresas"><i class='bx bxs-buildings'></i> Empresas</a>
-          <button class="logout-btn" (click)="logout()">
-            <i class='bx bx-log-out'></i> Sair
-          </button>
-        </div>
-      </nav>
+    <app-shell>
+      <div class="container">
+        <app-page-header
+          title="Alunos"
+          subtitle="Gerencie os estudantes cadastrados na plataforma."
+        >
+          <app-button variant="primary" routerLink="/alunos/novo">
+            <span class="material-icons">add</span>
+            Novo aluno
+          </app-button>
+        </app-page-header>
 
-      <main class="content">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h2>Gestão de Alunos</h2>
-              <p class="subtitle">Acompanhe e gerencie todos os estudantes cadastrados na plataforma.</p>
-            </div>
-            
-            <button mat-flat-button color="primary" routerLink="/alunos/novo" *ngIf="isAdmin" class="add-btn">
-              <mat-icon>add</mat-icon> Cadastrar Aluno
-            </button>
-          </div>
-
+        <app-card [padded]="false">
           @if (loading()) {
-            <mat-spinner class="center" diameter="48"></mat-spinner>
-          } @else if (alunos().length === 0) {
-            <div class="empty-state">
-              <i class='bx bx-folder-open'></i>
-              <p>Nenhum aluno cadastrado no sistema ainda.</p>
+            <div class="loading-row">
+              <span class="material-icons spin">progress_activity</span>
+              <span>Carregando…</span>
             </div>
+          } @else if (alunos().length === 0) {
+            <app-empty-state
+              icon="group_off"
+              title="Nenhum aluno cadastrado"
+              description="Quando alunos se cadastrarem, eles aparecerão aqui."
+            ></app-empty-state>
           } @else {
-            <div class="table-responsive">
-              <table mat-table [dataSource]="alunos()" class="full-width">
-                <ng-container matColumnDef="nome">
-                  <th mat-header-cell *matHeaderCellDef>Nome</th>
-                  <td mat-cell *matCellDef="let a"><strong>{{ a.nome }}</strong></td>
-                </ng-container>
-                
-                <ng-container matColumnDef="email">
-                  <th mat-header-cell *matHeaderCellDef>Email</th>
-                  <td mat-cell *matCellDef="let a">{{ a.email }}</td>
-                </ng-container>
-                
-                <ng-container matColumnDef="cpf">
-                  <th mat-header-cell *matHeaderCellDef>CPF</th>
-                  <td mat-cell *matCellDef="let a">{{ a.cpf }}</td>
-                </ng-container>
-                
-                <ng-container matColumnDef="curso">
-                  <th mat-header-cell *matHeaderCellDef>Curso</th>
-                  <td mat-cell *matCellDef="let a"><span class="badge">{{ a.curso }}</span></td>
-                </ng-container>
-                
-                <ng-container matColumnDef="instituicao">
-                  <th mat-header-cell *matHeaderCellDef>Instituição</th>
-                  <td mat-cell *matCellDef="let a">{{ a.instituicaoNome }}</td>
-                </ng-container>
-                
-                <ng-container matColumnDef="saldo">
-                  <th mat-header-cell *matHeaderCellDef>Saldo</th>
-                  <td mat-cell *matCellDef="let a" class="coin-text">
-                    <i class='bx bx-coin-stack'></i> {{ a.saldoMoedas }}
-                  </td>
-                </ng-container>
-                
-                <ng-container matColumnDef="acoes">
-                  <th mat-header-cell *matHeaderCellDef class="text-right">Ações</th>
-                  <td mat-cell *matCellDef="let a" class="text-right">
-                    <button mat-icon-button color="primary" (click)="editar(a.id)" matTooltip="Editar Aluno">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button mat-icon-button color="warn" (click)="excluir(a)" matTooltip="Excluir Definitivamente">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="cols"></tr>
-                <tr mat-row *matRowDef="let row; columns: cols" class="table-row"></tr>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>CPF</th>
+                    <th>Curso</th>
+                    <th>Instituição</th>
+                    <th class="num">Saldo</th>
+                    <th class="end">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let a of alunos()">
+                    <td class="strong">{{ a.nome }}</td>
+                    <td>{{ a.email }}</td>
+                    <td><code>{{ a.cpf }}</code></td>
+                    <td><span class="badge">{{ a.curso }}</span></td>
+                    <td>{{ a.instituicaoNome }}</td>
+                    <td class="num accent">M$ {{ a.saldoMoedas }}</td>
+                    <td class="end actions">
+                      <button class="icon-btn" (click)="editar(a.id)" title="Editar">
+                        <span class="material-icons">edit</span>
+                      </button>
+                      <button class="icon-btn icon-btn--danger" (click)="excluir(a)" title="Excluir">
+                        <span class="material-icons">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           }
-        </div>
-      </main>
-
-    </div>
+        </app-card>
+      </div>
+    </app-shell>
   `,
   styles: [`
-    @import url('https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css');
+    .loading-row { display: flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-7); color: var(--color-text-muted); }
+    .spin { animation: spin 1s linear infinite; font-size: 20px !important; color: var(--color-brand); }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .dashboard-container { min-height: 100vh; background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    
-    /* Navbar */
-    .admin-navbar { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 15px 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-    .nav-brand { font-size: 22px; font-weight: bold; color: var(--primary, #1e3c72); display: flex; align-items: center; gap: 8px; }
-    .nav-brand span { color: #666; font-weight: 400; }
-    
-    .nav-links { display: flex; align-items: center; gap: 15px; }
-    .nav-links a { text-decoration: none; color: #666; font-weight: 600; font-size: 15px; padding: 10px 18px; border-radius: 8px; display: flex; align-items: center; gap: 6px; transition: 0.3s; }
-    .nav-links a i { font-size: 18px; }
-    .nav-links a:hover { background-color: #f0f4f8; color: var(--primary, #1e3c72); }
-    .nav-links a.active { background-color: var(--primary, #1e3c72); color: #fff; }
-    
-    .logout-btn { background: #ffebee; color: #d32f2f; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 15px; transition: 0.3s; margin-left: 10px; }
-    .logout-btn i { font-size: 18px; }
-    .logout-btn:hover { background: #d32f2f; color: #fff; }
-
-    /* Content & Card */
-    .content { padding: 40px; max-width: 1250px; margin: 0 auto; }
-    .card { background: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 30px; overflow: hidden; }
-    
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-    .card-header h2 { margin: 0; font-size: 24px; color: #333; }
-    .subtitle { margin: 5px 0 0; color: #777; font-size: 14px; }
-    
-    .add-btn { padding: 5px 20px; border-radius: 8px; font-weight: 600; letter-spacing: 0.5px; }
-
-    /* Table Styles */
-    .table-responsive { width: 100%; overflow-x: auto; }
-    .full-width { width: 100%; }
-    .table-row:hover { background-color: #f9fbfd; }
-    th.mat-header-cell { font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; }
-    td.mat-cell { font-size: 14px; color: #444; border-bottom: 1px solid #f0f0f0; padding: 15px 0; }
-    
-    .badge { background: #e3f2fd; color: #1565c0; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .coin-text { color: #f39c12; font-weight: bold; display: flex; align-items: center; gap: 5px; }
-    .text-right { text-align: right; }
-
-    /* Empty State & Loader */
-    .center { margin: 60px auto; display: block; }
-    .empty-state { text-align: center; padding: 60px 20px; color: #888; }
-    .empty-state i { font-size: 60px; color: #ccc; margin-bottom: 15px; }
-    .empty-state p { font-size: 16px; margin: 0; }
-
-    @media (max-width: 768px) {
-      .admin-navbar { flex-direction: column; gap: 15px; padding: 15px 20px; }
-      .nav-links { width: 100%; justify-content: space-between; }
-      .content { padding: 20px; }
-      .card { padding: 20px; }
+    .table-wrap { overflow-x: auto; }
+    .table {
+      width: 100%; border-collapse: collapse; font-size: var(--text-sm);
     }
+    .table th, .table td {
+      padding: var(--space-3) var(--space-5);
+      text-align: left;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .table th {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      font-weight: 600;
+      background: var(--color-surface-alt);
+    }
+    .table tbody tr:hover { background: var(--color-surface-alt); }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .strong { font-weight: 600; color: var(--color-text); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .end { text-align: right; }
+    .accent { color: var(--color-brand); font-weight: 700; }
+    code { font-family: ui-monospace, monospace; background: var(--color-surface-alt); padding: 2px 6px; border-radius: var(--radius-sm); font-size: var(--text-xs); }
+    .badge {
+      display: inline-block;
+      padding: 2px var(--space-2);
+      background: var(--color-brand-soft);
+      color: var(--color-brand);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+    .actions { white-space: nowrap; }
+    .icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px;
+      border-radius: var(--radius-md);
+      background: transparent;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .icon-btn:hover { background: var(--color-brand-soft); color: var(--color-brand); }
+    .icon-btn--danger:hover { background: var(--color-danger-soft); color: var(--color-danger); }
+    .icon-btn .material-icons { font-size: 18px; }
   `]
 })
 export class AlunoListComponent implements OnInit {
   private alunoService = inject(AlunoService);
-  private auth = inject(AuthService);
   private router = inject(Router);
   private snack = inject(MatSnackBar);
 
-  alunos = signal<AlunoResponse[]>([]);
-  loading = signal(true);
-  
-  isAdmin = false;
-  cols = ['nome', 'email', 'cpf', 'curso', 'instituicao', 'saldo', 'acoes'];
+  protected alunos = signal<AlunoResponse[]>([]);
+  protected loading = signal(true);
 
   ngOnInit(): void {
-    const user = this.auth.getCurrentUser();
-    this.isAdmin = user?.tipoUsuario?.toUpperCase() === 'ADMIN';
-
-    if (!this.isAdmin) {
-      this.router.navigate(['/home']);
-      this.snack.open('Acesso negado. Esta área é restrita a administradores.', 'Fechar', { duration: 4000 });
-      return;
-    }
-
     this.carregar();
   }
 
-  carregar() {
+  carregar(): void {
     this.loading.set(true);
     this.alunoService.listar().subscribe({
-      next: (res) => {
-        this.alunos.set(res);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.snack.open('Erro ao carregar alunos.', 'Fechar', { duration: 4000 });
-      },
+      next: (res) => { this.alunos.set(res); this.loading.set(false); },
+      error: () => { this.loading.set(false); this.snack.open('Erro ao carregar alunos.', 'Fechar', { duration: 4000, panelClass: ['snackbar-error'] }); },
     });
   }
 
-  editar(id: number) {
-    this.router.navigate(['/alunos', id, 'editar']);
-  }
+  editar(id: number): void { this.router.navigate(['/alunos', id, 'editar']); }
 
-  excluir(a: AlunoResponse) {
+  excluir(a: AlunoResponse): void {
     if (!confirm(`Excluir aluno "${a.nome}"?`)) return;
     this.alunoService.deletar(a.id).subscribe({
-      next: () => {
-        this.snack.open('Aluno excluído.', 'Fechar', { duration: 3000 });
-        this.carregar();
-      },
-      error: (err) => {
-        const msg = err?.error?.mensagem ?? 'Erro ao excluir aluno.';
-        this.snack.open(msg, 'Fechar', { duration: 4000 });
-      },
+      next: () => { this.snack.open('Aluno excluído.', 'Fechar', { duration: 3000, panelClass: ['snackbar-success'] }); this.carregar(); },
+      error: (err) => this.snack.open(err?.error?.mensagem ?? 'Erro ao excluir.', 'Fechar', { duration: 4000, panelClass: ['snackbar-error'] }),
     });
-  }
-
-  logout() {
-    this.auth.logout();
-    this.router.navigate(['/login']);
   }
 }

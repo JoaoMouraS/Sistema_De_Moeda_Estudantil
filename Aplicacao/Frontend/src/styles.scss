@@ -1,47 +1,16 @@
-/* ==========================================================================
-   DESIGN SYSTEM - STUDENT COINS
-   ========================================================================== */
+@use 'styles/tokens';
+@use 'styles/reset';
+@use 'styles/utilities';
 
-@import "@angular/material/prebuilt-themes/indigo-pink.css";
-
-:root {
-  /* Cores de Fundo e Superfícies */
-  --bg-main: #192b40;       /* Fundo principal do site */
-  --bg-card: #ffffff;       /* Fundo branco para formulários e modais */
-  
-  /* Cores Principais (Ações, Painéis, Alunos) */
-  --primary: #31a7db;       
-  --primary-hover: #037391; 
-  
-  /* Cores Secundárias (Destaques, Moedas) */
-  --accent: #f2b139;        
-  --accent-hover: #d68d33;  
-  
-  /* Cores Terciárias (Botões de Empresa Parceira) */
-  --secondary: #273c52;     
-  --secondary-hover: #1e2d3d;
-  
-  /* Textos */
-  --text-light: #ffffff;    /* Texto claro sobre fundos escuros */
-  --text-muted: #cbd5e1;    /* Texto cinza azulado para subtítulos */
-  --text-dark: #333333;     /* Texto escuro sobre fundos brancos */
-  
-  /* Feedback e Formulários */
-  --error: #e74c3c;
-  --success: #2ecc71;
-  --input-border: #98a9c0;
+// Snackbar com tom de marca
+.mat-mdc-snack-bar-container.snackbar-success {
+  --mdc-snackbar-container-color: var(--color-success);
+  --mat-mdc-snack-bar-button-color: #ffffff;
+  --mdc-snackbar-supporting-text-color: #ffffff;
 }
 
-/* Reset Global Básico */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  background-color: var(--bg-main);
-  color: var(--text-light);
-  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  min-height: 100vh;
+.mat-mdc-snack-bar-container.snackbar-error {
+  --mdc-snackbar-container-color: var(--color-danger);
+  --mat-mdc-snack-bar-button-color: #ffffff;
+  --mdc-snackbar-supporting-text-color: #ffffff;
 }

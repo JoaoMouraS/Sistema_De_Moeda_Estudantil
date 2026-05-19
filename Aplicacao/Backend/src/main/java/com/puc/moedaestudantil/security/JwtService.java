@@ -3,6 +3,7 @@ package com.puc.moedaestudantil.security;
 import io.micronaut.security.token.generator.TokenGenerator;
 import jakarta.inject.Singleton;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -19,7 +20,7 @@ public class JwtService {
         claims.put("sub", email);
         claims.put("usuarioId", usuarioId);
         claims.put("tipoUsuario", tipoUsuario);
-        // 4 horas
+        claims.put("roles", List.of("ROLE_" + tipoUsuario));
         return tokenGenerator.generateToken(claims).orElseThrow(
                 () -> new IllegalStateException("Falha ao gerar token JWT"));
     }
