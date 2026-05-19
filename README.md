@@ -174,7 +174,6 @@ curl -X POST http://localhost:8080/api/professores/1/distribuir \
 
 ## Documentação adicional
 
-- **[docs/DESENVOLVIMENTO.md](docs/DESENVOLVIMENTO.md)** — Guia técnico para devs (estrutura, convenções, endpoints, regras de negócio, design system, troubleshooting, fluxos de teste).
 - **[Descrição do problema (PDF)](Descrição%20Problema%20Lab%2003%20Release1.pdf)** — Especificação original da Release 1.
 - **[Histórias de Usuário (PDF)](docs/Histórias-de-Usuário.pdf)** — US01 a US10.
 - Diagramas UML em `docs/` (Caso de Uso, Classes, Componentes, ER).
