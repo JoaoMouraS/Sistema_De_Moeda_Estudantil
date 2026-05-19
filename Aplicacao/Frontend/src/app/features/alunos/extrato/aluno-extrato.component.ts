@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Student, Transaction } from '../../../core/models/api-models';
+import { ProfileService } from '../../../core/services/profile.service';
 import { BalanceCardComponent } from './components/balance-card.component';
 import { ExtractFilterComponent, PeriodFilter, TypeFilter } from './components/extract-filter.component';
 import { TransactionListComponent } from './components/transaction-list.component';
@@ -133,62 +134,33 @@ export class AlunoExtratoComponent implements OnInit {
   filteredTransactions = signal<Transaction[]>([]);
 
   currentFilter = { period: 'all' as PeriodFilter, type: 'ALL' as TypeFilter };
+  private profileService = inject(ProfileService);
 
   ngOnInit() {
-    this.loadMockData();
+    this.loadExtractData();
   }
 
-  loadMockData() {
+  private loadExtractData() {
     this.loading.set(true);
-    
-    // Simula tempo de resposta da API
-    setTimeout(() => {
-      const now = new Date();
-      const mockData: Transaction[] = [
-        {
-          id: 1,
-          dataHora: new Date(now.getTime() - 1000 * 60 * 60 * 2),
-          descricao: 'Nota A em Matemática',
-          tipo: 'CREDITO',
-          valor: 100,
-        },
-        {
-          id: 2,
-          dataHora: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2),
-          descricao: 'Resgate de ingresso pro Cinema',
-          tipo: 'DEBITO',
-          valor: 50,
-        },
-        {
-          id: 3,
-          dataHora: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5),
-          descricao: 'Participação na Feira de Ciências',
-          tipo: 'CREDITO',
-          valor: 200,
-        },
-        {
-          id: 4,
-          dataHora: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 10),
-          descricao: 'Compra de livro na Cantina',
-          tipo: 'DEBITO',
-          valor: 80,
-        },
-        {
-          id: 5,
-          dataHora: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 40),
-          descricao: 'Destaque do mês',
-          tipo: 'CREDITO',
-          valor: 500,
-        },
-      ];
 
-      const balanceDelta = mockData.reduce((total, tx) => total + (tx.tipo === 'CREDITO' ? tx.valor : -tx.valor), 0);
-      this.student.set({ ...this.student(), saldoMoedas: this.student().saldoMoedas + balanceDelta });
+    this.profileService.getStudentProfile(this.student().id).subscribe({
+      next: (profile) => this.student.set(profile),
+      error: (error) => {
+        console.error('Erro ao carregar perfil do aluno:', error);
+      }
+    });
 
-      this.allTransactions.set(mockData);
-      this.applyFilters();
-      this.loading.set(false);
-    }, 1500);
+    this.profileService.getStudentTransactions(this.student().id).subscribe({
+      next: (transactions) => {
+        this.allTransactions.set(transactions);
+        this.applyFilters();
+        this.loading.set(false);
+      },
+      error: (error) => {
+        console.error('Erro ao carregar extrato do aluno:', error);
+        this.loading.set(false);
+      }
+    });
   }
 
   onFilterChanged(filter: { period: PeriodFilter, type: TypeFilter }) {

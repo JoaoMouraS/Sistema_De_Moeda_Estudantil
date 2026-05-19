@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { Transaction } from '../models/api-models';
 
 /**
  * Interface para os dados do perfil do aluno
@@ -64,5 +65,11 @@ export class ProfileService {
     const url = `${this.apiUrl}/${studentId}/profile`;
     console.log('🌐 PUT:', url);
     return this.http.put<StudentProfile>(url, data);
+  }
+
+  getStudentTransactions(studentId: number): Observable<Transaction[]> {
+    const url = `${this.apiUrl}/${studentId}/extrato`;
+    console.log('🌐 GET:', url);
+    return this.http.get<Transaction[]>(url);
   }
 }

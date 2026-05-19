@@ -38,6 +38,17 @@ export class AuthService {
     return raw ? JSON.parse(raw) : null;
   }
 
+  updateCurrentUserName(nome: string): void {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      return;
+    }
+    localStorage.setItem(USER_KEY, JSON.stringify({
+      ...currentUser,
+      nome
+    }));
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
   }

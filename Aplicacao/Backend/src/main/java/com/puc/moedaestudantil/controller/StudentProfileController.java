@@ -1,12 +1,17 @@
 package com.puc.moedaestudantil.controller;
 
 import com.puc.moedaestudantil.dto.StudentProfileResponse;
+import com.puc.moedaestudantil.dto.TransacaoResponseDTO;
 import com.puc.moedaestudantil.dto.UpdateStudentProfileRequest;
 import com.puc.moedaestudantil.service.StudentService;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.*;
+import io.micronaut.security.annotation.Secured;
+import io.micronaut.security.rules.SecurityRule;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import java.util.Map;
+import java.util.List;
 
 /**
  * StudentProfileController - Controller REST para gerenciar o perfil do aluno
@@ -18,6 +23,7 @@ import jakarta.validation.Valid;
  * Injeção de Dependência: O Micronaut injeta automaticamente StudentService
  */
 @Controller("/api/students")
+@Secured(SecurityRule.IS_AUTHENTICATED)
 public class StudentProfileController {
     
     @Inject
@@ -50,12 +56,21 @@ public class StudentProfileController {
      * @return StudentProfileResponse atualizado ou 404 se aluno não encontrado
      */
     @Put("/{id}/profile")
-    public HttpResponse<StudentProfileResponse> updateProfile(
+    public HttpResponse<Object> updateProfile(
         @PathVariable Long id,
         @Body @Valid UpdateStudentProfileRequest request
     ) {
-        return studentService.updateStudentProfile(id, request)
-            .map(profile -> HttpResponse.ok(profile))
-            .orElseGet(() -> HttpResponse.notFound());
+        try {
+            return studentService.updateStudentProfile(id, request)
+                .map(profile -> HttpResponse.<Object>ok(profile))
+                .orElseGet(() -> HttpResponse.<Object>notFound());
+        } catch (IllegalArgumentException ex) {
+            return HttpResponse.badRequest(Map.of("mensagem", ex.getMessage()));
+        }
+    }
+
+    @Get("/{id}/extrato")
+    public HttpResponse<List<TransacaoResponseDTO>> getStudentExtract(@PathVariable Long id) {
+        return HttpResponse.ok(studentService.getStudentTransactions(id));
     }
 }

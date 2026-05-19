@@ -1,10 +1,14 @@
 package com.puc.moedaestudantil.service;
 
 import com.puc.moedaestudantil.dto.StudentProfileResponse;
+import com.puc.moedaestudantil.dto.TransacaoResponseDTO;
 import com.puc.moedaestudantil.dto.UpdateStudentProfileRequest;
 import com.puc.moedaestudantil.model.Aluno;
 import com.puc.moedaestudantil.repository.StudentRepository;
+import com.puc.moedaestudantil.repository.TransacaoDAO;
+import com.puc.moedaestudantil.security.PasswordEncoder;
 import jakarta.inject.Singleton;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,14 +21,18 @@ import java.util.Optional;
 public class StudentService {
     
     private final StudentRepository studentRepository;
+    private final TransacaoDAO transacaoDAO;
+    private final PasswordEncoder passwordEncoder;
     
     /**
      * Construtor com injeção de dependência
      * O Micronaut detecta automaticamente que StudentRepository é necessário
      * e a injeta aqui durante a instanciação do StudentService
      */
-    public StudentService(StudentRepository studentRepository) {
+    public StudentService(StudentRepository studentRepository, TransacaoDAO transacaoDAO, PasswordEncoder passwordEncoder) {
         this.studentRepository = studentRepository;
+        this.transacaoDAO = transacaoDAO;
+        this.passwordEncoder = passwordEncoder;
     }
     
     /**
@@ -51,27 +59,38 @@ public class StudentService {
     ) {
         return studentRepository.findById(id)
             .map(aluno -> {
-                // Atualiza os campos fornecidos
+                if (!aluno.getEmail().equals(request.email()) && studentRepository.findByEmail(request.email()).isPresent()) {
+                    throw new IllegalArgumentException("Email já está em uso por outro usuário.");
+                }
+
                 aluno.setNome(request.nome());
                 aluno.setEmail(request.email());
-                
+
                 if (request.endereco() != null && !request.endereco().isBlank()) {
                     aluno.setEndereco(request.endereco());
+                } else {
+                    aluno.setEndereco(null);
                 }
-                
-                // Atualiza senha apenas se fornecida
-                // Em produção, seria necessário fazer hash da senha com bcrypt ou similar
+
                 if (request.senha() != null && !request.senha().isBlank()) {
-                    // TODO: Implementar hash de senha
-                    // aluno.setSenha(hashPassword(request.senha()));
+                    aluno.setSenhaHash(passwordEncoder.hash(request.senha()));
                 }
-                
-                // Salva as alterações
+
                 studentRepository.update(aluno);
-                
-                // Retorna o perfil atualizado
                 return mapToProfileResponse(aluno);
             });
+    }
+    
+    /**
+     * Retorna as transações do aluno pelo ID
+     *
+     * @param studentId ID do aluno
+     * @return lista de transações associadas ao aluno
+     */
+    public List<TransacaoResponseDTO> getStudentTransactions(Long studentId) {
+        return transacaoDAO.listarPorAluno(studentId).stream()
+                .map(TransacaoResponseDTO::fromEntity)
+                .toList();
     }
     
     /**
