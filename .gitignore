@@ -22,3 +22,8 @@ build/
 
 # Dependências
 node_modules/
+
+# Variáveis de ambiente (segredos locais)
+.env
+.env.local
+!.env.example

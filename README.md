@@ -2,7 +2,7 @@
 
 Sistema que estimula o reconhecimento do mérito estudantil através de uma moeda virtual. Professores distribuem moedas a alunos como reconhecimento; empresas parceiras oferecem vantagens em troca dessas moedas.
 
-> Projeto da disciplina **Laboratório de Desenvolvimento de Software** — Engenharia de Software, PUC Minas. Prof. **João Paulo Carneiro Aramuni**. Avaliação Lab03 — Release 1.
+> Projeto da disciplina **Laboratório de Desenvolvimento de Software** — Engenharia de Software, PUC Minas. Prof. **João Paulo Carneiro Aramuni**. Lab03 — Release 1 (concluída) · Lab04 — Release 2 (em andamento).
 
 ---
 
@@ -46,10 +46,11 @@ A Release 1 — **Lab03S03** — implementa o seguinte recorte:
 | US06 — Professor consulta extrato e saldo | ✅ |
 | Cadastro/edição/listagem de Empresa Parceira (CRUD final) | ✅ |
 | Painel Admin (listagem/edição/exclusão de alunos e empresas) | ✅ |
-| US04 — Resgate de vantagens pelo aluno | ⏸ fora de escopo |
-| US07 — Cadastro de vantagens pela empresa | ⏸ fora de escopo |
-| US08 — Crédito automático de 1.000 moedas/semestre | ⏸ fora de escopo |
-| US09/US10 — Notificações por e-mail + cupom de resgate | ⏸ fora de escopo |
+| US07 — CRUD de Vantagens pela empresa (backend) | ✅ Lab04 |
+| Infra de mensageria (RabbitMQ + exchange/filas/DLQ) | ✅ Lab04 |
+| US04 — Resgate de vantagens pelo aluno | 🛠 em andamento |
+| US08 — Crédito automático de 1.000 moedas/semestre | 🛠 em andamento |
+| US09/US10 — Notificações por e-mail + cupom de resgate + WhatsApp | 🛠 em andamento |
 
 ---
 
@@ -58,10 +59,13 @@ A Release 1 — **Lab03S03** — implementa o seguinte recorte:
 **Backend**
 - Java 21
 - Micronaut 4.10
-- Hibernate / Micronaut Data JPA (ORM)
+- Hibernate / Micronaut Data JPA (ORM) + Flyway (migrations)
 - Padrão DAO com `EntityManager`
 - Micronaut Security JWT (Bearer, 4h) + BCrypt (custo 12)
-- PostgreSQL 14+
+- PostgreSQL 14+ (local via Docker ou Neon serverless)
+- RabbitMQ 3 (mensageria de notificações) via `micronaut-rabbitmq`
+- Jakarta Mail (SMTP) e Google ZXing (geração de QR Code)
+- `dotenv-java` para carregar `.env` em desenvolvimento
 - Maven 3.9+
 
 **Frontend**
@@ -88,30 +92,83 @@ Controller (HTTP)  →  DTO  →  Service (regra)  →  DAO (persistência)  →
 ## Pré-requisitos
 
 - **Java 21** (JDK)
-- **Maven 3.9+** (o projeto inclui `mvnw`)
+- **Maven 3.9+** (o projeto já inclui `mvnw`)
 - **Node.js 20+** e **npm**
-- **PostgreSQL 14+** rodando em `localhost:5432` com usuário `postgres` / senha `postgres`
-
-> O backend cria automaticamente o database `moedaestudantil` no primeiro startup, se ele ainda não existir.
+- **Docker Desktop** (para subir PostgreSQL e RabbitMQ localmente)
+- _Opcional:_ conta no **[Neon](https://neon.tech)** caso queira hospedar o Postgres na nuvem em vez de localmente.
 
 ---
 
 ## Subindo o projeto
 
-### 1. Backend
+O backend lê configuração de um arquivo **`.env`** localizado em `Aplicacao/Backend/.env`. O arquivo **não** é versionado; use `.env.example` como template.
+
+### 1. Configurar variáveis de ambiente
+
+```powershell
+cd Aplicacao\Backend
+Copy-Item .env.example .env
+```
+
+Edite o `.env` com seus valores. Os blocos principais:
+
+| Bloco | Variáveis | Quando preencher |
+|---|---|---|
+| Banco de dados | `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DB_SKIP_BOOTSTRAP` | Sempre |
+| JWT | `JWT_SECRET` | Sempre (use um segredo aleatório ≥ 256 bits) |
+| CORS | `CORS_ALLOWED_ORIGIN` | Sempre (default: `http://localhost:4200`) |
+| RabbitMQ | `RABBITMQ_URI` | Sempre — usado para notificações assíncronas |
+| E-mail (SMTP) | `MAIL_ENABLED`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | Quando ligar notificações por e-mail |
+| WhatsApp | `WHATSAPP_ENABLED`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_TEMPLATE` | Quando ligar notificações no WhatsApp |
+
+#### Opção A — Postgres local (via Docker)
+
+```dotenv
+DB_URL=jdbc:postgresql://localhost:5432/moedaestudantil
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_SKIP_BOOTSTRAP=false
+```
+
+Com `DB_SKIP_BOOTSTRAP=false`, o backend tenta criar o database `moedaestudantil` automaticamente no primeiro startup.
+
+#### Opção B — Postgres no Neon (gerenciado)
+
+1. Crie um projeto em [neon.tech](https://neon.tech) e copie a connection string.
+2. Converta de `postgresql://user:senha@host/db?sslmode=require` para o formato JDBC:
+
+```dotenv
+DB_URL="jdbc:postgresql://ep-xxxxx.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+DB_USER=neondb_owner
+DB_PASSWORD=<senha-do-neon>
+DB_SKIP_BOOTSTRAP=true
+```
+
+`DB_SKIP_BOOTSTRAP=true` é obrigatório no Neon — o banco já existe e a conta não tem permissão de `CREATE DATABASE`.
+
+### 2. Subir a infraestrutura local (RabbitMQ + opcionalmente Postgres)
+
+```powershell
+cd Aplicacao\Backend
+docker compose up -d              # sobe Postgres + RabbitMQ
+# OU, se estiver usando Neon, apenas o RabbitMQ:
+docker compose up -d rabbitmq
+```
+
+Painel do RabbitMQ: `http://localhost:15672` (login `guest` / `guest`).
+
+### 3. Backend
 
 ```powershell
 cd Aplicacao\Backend
 .\mvnw mn:run
 ```
 
-O backend sobe em `http://localhost:8080`. Endpoints sob `/api/*`.
+O backend sobe em `http://localhost:8080`. Endpoints REST sob `/api/*`. O Flyway roda as migrations automaticamente; o `DataSeeder` cria os perfis de teste no primeiro startup.
 
-Variáveis de ambiente opcionais:
-- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — sobrescrevem os defaults do PostgreSQL.
-- `JWT_SECRET` — substitui o segredo de assinatura JWT (recomendado em produção; o default é seguro apenas para desenvolvimento).
+Swagger UI: `http://localhost:8080/swagger-ui` (clique em **Authorize** e cole o JWT obtido em `/api/auth/login`).
 
-### 2. Frontend
+### 4. Frontend
 
 ```powershell
 cd Aplicacao\Frontend
@@ -187,6 +244,11 @@ curl -X POST http://localhost:8080/api/professores/1/distribuir \
 | **Lab03S01** | Diagrama de Casos de Uso, Histórias de Usuário, Diagrama de Classes, Diagrama de Componentes | ✅ |
 | **Lab03S02** | Modelo ER, estratégia ORM + DAO, CRUDs iniciais de Aluno e Empresa Parceira | ✅ |
 | **Lab03S03** | CRUDs versão final + camada de persistência + arquitetura + feature de Professor | ✅ |
+| **Lab04S01** | Infra base (RabbitMQ + Mail + ZXing), notificação de envio de moedas, job semestral | 🛠 em andamento |
+| **Lab04S02** | CRUD de Vantagem (back ✅ / front 🛠) + listagem para aluno + diagramas de sequência | 🛠 em andamento |
+| **Lab04S03** | Resgate + geração de QR Code + WhatsApp Cloud API + diagrama geral | ⏸ pendente |
+| **Lab05S01** | Deploy cloud (Render + Vercel + Neon + CloudAMQP) + diagramas de Comunicação e Implantação | ⏸ pendente |
+| **Lab05S02** | Análise crítica de outro grupo + 3 PRs de refatoração | ⏸ pendente |
 
 ---
 

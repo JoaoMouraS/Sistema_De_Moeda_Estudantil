@@ -21,7 +21,7 @@
     <micronaut.aot.enabled>false</micronaut.aot.enabled>
     <micronaut.aot.packageName>com.puc.moedaestudantil.aot.generated</micronaut.aot.packageName>
     <micronaut.runtime>netty</micronaut.runtime>
-    <micronaut.test.resources.enabled>true</micronaut.test.resources.enabled>
+    <micronaut.test.resources.enabled>false</micronaut.test.resources.enabled>
     <exec.mainClass>com.puc.moedaestudantil.Application</exec.mainClass>
   </properties>
 
@@ -81,6 +81,40 @@
       <groupId>at.favre.lib</groupId>
       <artifactId>bcrypt</artifactId>
       <version>0.10.2</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micronaut.rabbitmq</groupId>
+      <artifactId>micronaut-rabbitmq</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.cdimascio</groupId>
+      <artifactId>dotenv-java</artifactId>
+      <version>3.0.0</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.angus</groupId>
+      <artifactId>jakarta.mail</artifactId>
+      <version>2.0.3</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>3.5.3</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>3.5.3</version>
       <scope>compile</scope>
     </dependency>
 

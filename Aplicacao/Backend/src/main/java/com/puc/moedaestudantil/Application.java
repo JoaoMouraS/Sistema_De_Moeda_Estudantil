@@ -1,5 +1,6 @@
 package com.puc.moedaestudantil;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import io.micronaut.runtime.Micronaut;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,14 +19,45 @@ public class Application {
     private static final Pattern DB_NAME_SAFE = Pattern.compile("^[a-zA-Z0-9_]+$");
 
     public static void main(String[] args) {
-        bootstrapDatabase(
-                System.getenv().getOrDefault("DB_NAME", "moedaestudantil"),
-                System.getenv().getOrDefault("DB_HOST", "localhost"),
-                System.getenv().getOrDefault("DB_PORT", "5432"),
-                System.getenv().getOrDefault("DB_USER", "postgres"),
-                System.getenv().getOrDefault("DB_PASSWORD", "postgres")
-        );
+        loadDotenv();
+
+        if (!Boolean.parseBoolean(env("DB_SKIP_BOOTSTRAP", "false"))) {
+            bootstrapDatabase(
+                    env("DB_NAME", "moedaestudantil"),
+                    env("DB_HOST", "localhost"),
+                    env("DB_PORT", "5432"),
+                    env("DB_USER", "postgres"),
+                    env("DB_PASSWORD", "postgres")
+            );
+        } else {
+            LOG.info("DB_SKIP_BOOTSTRAP=true — pulando criação automática (banco gerenciado).");
+        }
+
         Micronaut.run(Application.class, args);
+    }
+
+    private static void loadDotenv() {
+        Dotenv dotenv = Dotenv.configure()
+                .ignoreIfMissing()
+                .ignoreIfMalformed()
+                .load();
+        dotenv.entries().forEach(e -> {
+            if (System.getProperty(e.getKey()) == null && System.getenv(e.getKey()) == null) {
+                System.setProperty(e.getKey(), e.getValue());
+            }
+        });
+    }
+
+    private static String env(String key, String fallback) {
+        String fromEnv = System.getenv(key);
+        if (fromEnv != null && !fromEnv.isBlank()) {
+            return fromEnv;
+        }
+        String fromProp = System.getProperty(key);
+        if (fromProp != null && !fromProp.isBlank()) {
+            return fromProp;
+        }
+        return fallback;
     }
 
     private static void bootstrapDatabase(String dbName, String host, String port, String user, String password) {

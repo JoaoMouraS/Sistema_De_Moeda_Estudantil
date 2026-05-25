@@ -5,6 +5,7 @@ import com.puc.moedaestudantil.exception.AlunoNaoEncontradoException;
 import com.puc.moedaestudantil.exception.EmpresaNaoEncontradaException;
 import com.puc.moedaestudantil.exception.InstituicaoNaoEncontradaException;
 import com.puc.moedaestudantil.exception.ProfessorNaoEncontradoException;
+import com.puc.moedaestudantil.exception.VantagemNaoEncontradaException;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -60,6 +61,16 @@ public final class NotFoundExceptionHandler {
     public static class InstituicaoHandler implements ExceptionHandler<InstituicaoNaoEncontradaException, HttpResponse<ErroResponse>> {
         @Override
         public HttpResponse<ErroResponse> handle(HttpRequest request, InstituicaoNaoEncontradaException ex) {
+            return notFound(request, ex.getMessage());
+        }
+    }
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Singleton
+    @Requires(classes = {VantagemNaoEncontradaException.class, ExceptionHandler.class})
+    public static class VantagemHandler implements ExceptionHandler<VantagemNaoEncontradaException, HttpResponse<ErroResponse>> {
+        @Override
+        public HttpResponse<ErroResponse> handle(HttpRequest request, VantagemNaoEncontradaException ex) {
             return notFound(request, ex.getMessage());
         }
     }

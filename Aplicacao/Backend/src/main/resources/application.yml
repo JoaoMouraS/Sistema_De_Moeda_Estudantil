@@ -75,3 +75,32 @@ jpa:
 jackson:
   serialization:
     writeDatesAsTimestamps: false
+
+rabbitmq:
+  uri: ${RABBITMQ_URI:`amqp://guest:guest@localhost:5672`}
+
+notifications:
+  exchange: notifications.exchange
+  queues:
+    email: email.queue
+    whatsapp: whatsapp.queue
+    dlq: notifications.dlq
+  dlx: notifications.dlx
+
+mail:
+  enabled: ${MAIL_ENABLED:false}
+  host: ${MAIL_HOST:sandbox.smtp.mailtrap.io}
+  port: ${MAIL_PORT:2525}
+  username: ${MAIL_USERNAME:}
+  password: ${MAIL_PASSWORD:}
+  from: ${MAIL_FROM:no-reply@moedaestudantil.local}
+  from-name: ${MAIL_FROM_NAME:Sistema de Moeda Estudantil}
+  starttls: ${MAIL_STARTTLS:true}
+
+whatsapp:
+  enabled: ${WHATSAPP_ENABLED:false}
+  base-url: ${WHATSAPP_BASE_URL:`https://graph.facebook.com/v22.0`}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:}
+  template-name: ${WHATSAPP_TEMPLATE:coupon_redemption}
+  template-language: ${WHATSAPP_TEMPLATE_LANG:pt_BR}
