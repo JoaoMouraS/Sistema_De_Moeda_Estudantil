@@ -1,0 +1,68 @@
+@startuml
+title Diagrama de Sequência — Enviar Moedas (Professor -> Aluno)
+
+actor Professor as P
+participant "DistribuirMoedasPage\n(Angular)" as Page
+participant "ProfessorService\n(Frontend)" as FeSvc
+participant "ProfessorController" as Ctrl
+participant "ProfessorService\n(Backend)" as Svc
+participant "ProfessorRepository" as PRepo
+participant "AlunoRepository" as ARepo
+participant "TransacaoRepository" as TRepo
+database "PostgreSQL" as DB
+participant "NotificationProducer" as Prod
+queue "RabbitMQ\nnotifications.exchange" as MQ
+participant "EmailNotificationConsumer" as Cons
+participant "EmailService\n(SMTP)" as Mail
+
+P -> Page : seleciona aluno, quantidade e motivo
+Page -> FeSvc : distribuirMoedas(profId, {alunoId, quantidade, mensagem})
+FeSvc -> Ctrl : POST /api/professores/{id}/distribuir
+activate Ctrl
+Ctrl -> Ctrl : requireOwnerOrAdmin(auth, id)
+Ctrl -> Svc : distribuirMoedas(profId, request)
+activate Svc
+
+Svc -> PRepo : findByIdAndDeletedAtIsNull(profId)
+PRepo -> DB : SELECT
+DB --> PRepo : Professor
+PRepo --> Svc : Professor
+Svc -> ARepo : findByIdAndDeletedAtIsNull(alunoId)
+ARepo -> DB : SELECT
+DB --> ARepo : Aluno
+ARepo --> Svc : Aluno
+
+alt saldo insuficiente (saldo < quantidade)
+    Svc --> Ctrl : SaldoInsuficienteException
+    Ctrl --> FeSvc : 409 Conflict
+else saldo suficiente
+    Svc -> Svc : professor.saldo -= quantidade\naluno.saldo += quantidade
+    Svc -> PRepo : update(professor)
+    PRepo -> DB : UPDATE
+    Svc -> ARepo : update(aluno)
+    ARepo -> DB : UPDATE
+    Svc -> TRepo : save(Transacao ENVIO_MOEDA)
+    TRepo -> DB : INSERT
+    TRepo --> Svc : Transacao
+
+    group Notificações (assíncrono, try/catch por destinatário)
+        Svc -> Prod : enviarEmailMoedaAluno(msg)
+        Prod -> MQ : publish (routing aluno-moeda)
+        Svc -> Prod : enviarEmailMoedaProfessor(msg)
+        Prod -> MQ : publish (routing professor-moeda)
+    end
+
+    Svc --> Ctrl : TransacaoResponse
+    deactivate Svc
+    Ctrl --> FeSvc : 201 Created + TransacaoResponse
+    deactivate Ctrl
+    FeSvc --> Page : sucesso
+    Page --> P : confirma envio
+end
+
+== Consumo assíncrono das mensagens ==
+MQ -> Cons : entrega NotificationMessage
+Cons -> Mail : envia email (template moeda-recebida-aluno / moeda-enviada-professor)
+Mail --> Cons : enviado
+
+@enduml

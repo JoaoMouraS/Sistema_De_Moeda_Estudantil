@@ -1,0 +1,48 @@
+@startuml
+title Diagrama de Sequência — Autenticar (Login)
+
+actor Usuario as U
+participant "LoginPage\n(Angular)" as Page
+participant "AuthService\n(Frontend)" as FeSvc
+participant "AuthController" as Ctrl
+participant "AuthService\n(Backend)" as Svc
+participant "UsuarioRepository" as Repo
+participant "PasswordEncoder" as Pwd
+participant "JwtService" as Jwt
+database "PostgreSQL" as DB
+
+U -> Page : informa email e senha
+Page -> FeSvc : login(email, senha)
+FeSvc -> Ctrl : POST /api/auth/login\n{email, senha}
+activate Ctrl
+Ctrl -> Svc : autenticar(request)
+activate Svc
+
+Svc -> Repo : findByEmailAndDeletedAtIsNull(email)
+Repo -> DB : SELECT
+DB --> Repo : Usuario
+Repo --> Svc : Optional<Usuario>
+
+alt usuário não encontrado
+    Svc --> Ctrl : CredenciaisInvalidasException
+    Ctrl --> FeSvc : 401 Unauthorized
+else encontrado
+    Svc -> Pwd : matches(senha, senhaHash)
+    Pwd --> Svc : boolean
+    alt senha inválida
+        Svc --> Ctrl : CredenciaisInvalidasException
+        Ctrl --> FeSvc : 401 Unauthorized
+    else senha válida
+        Svc -> Jwt : gerarToken(usuario)
+        Jwt --> Svc : JWT
+        Svc --> Ctrl : LoginResponse{token, tipoUsuario, id}
+        deactivate Svc
+        Ctrl --> FeSvc : 200 OK + LoginResponse
+        deactivate Ctrl
+        FeSvc -> FeSvc : armazena token (localStorage)
+        FeSvc --> Page : usuário autenticado
+        Page --> U : redireciona ao painel
+    end
+end
+
+@enduml

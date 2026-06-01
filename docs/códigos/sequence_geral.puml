@@ -1,0 +1,63 @@
+@startuml
+title Diagrama de Sequência Geral — Sistema de Moeda Estudantil
+
+actor Professor as P
+actor Aluno as A
+actor "Empresa Parceira" as E
+
+participant "Frontend\n(Angular)" as Fe
+participant "Backend\n(Micronaut MVC)" as Be
+database "PostgreSQL" as DB
+queue "RabbitMQ" as MQ
+participant "Email / WhatsApp" as Notif
+
+== Autenticação (todos os atores) ==
+P -> Fe : login
+A -> Fe : login
+E -> Fe : login
+Fe -> Be : POST /api/auth/login
+Be -> DB : valida credenciais
+Be --> Fe : JWT (token)
+
+== 1. Empresa cadastra vantagens ==
+E -> Fe : cadastra vantagem (nome, descrição, custo, foto)
+Fe -> Be : POST /api/vantagens
+Be -> DB : INSERT vantagem
+Be --> Fe : 201 Created
+
+== 2. Professor envia moedas ao aluno ==
+P -> Fe : envia moedas (aluno, quantidade, motivo)
+Fe -> Be : POST /api/professores/{id}/distribuir
+Be -> Be : verifica saldo do professor
+Be -> DB : debita professor, credita aluno,\nregistra Transacao (ENVIO_MOEDA)
+Be -> MQ : publica notificações
+MQ -> Notif : email ao aluno e ao professor
+Be --> Fe : 201 Created
+
+== 3. Aluno consulta extrato e catálogo ==
+A -> Fe : abre extrato
+Fe -> Be : GET /api/students/{id}/extrato
+Be -> DB : SELECT transacoes
+Be --> Fe : saldo + histórico
+
+A -> Fe : abre catálogo de vantagens
+Fe -> Be : GET /api/vantagens
+Be -> DB : SELECT vantagens ativas
+Be --> Fe : lista de vantagens
+
+== 4. Aluno resgata (troca) vantagem ==
+A -> Fe : confirma resgate da vantagem
+Fe -> Be : POST /api/resgates
+Be -> Be : verifica saldo do aluno
+Be -> DB : debita saldo, gera código de cupom,\nregistra Transacao (RESGATE_VANTAGEM)
+Be -> MQ : publica notificações de cupom
+MQ -> Notif : email/QR ao aluno + email à empresa
+Be --> Fe : 201 Created (cupom + QR Code)
+
+== 5. Empresa confere o cupom ==
+E -> Fe : valida / utiliza cupom
+Fe -> Be : GET /api/cupons/{codigo}/validar\nPOST /api/cupons/{codigo}/utilizar
+Be -> DB : consulta e marca cupom como utilizado
+Be --> Fe : status do cupom (VÁLIDO / UTILIZADO / EXPIRADO)
+
+@enduml

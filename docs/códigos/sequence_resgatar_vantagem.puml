@@ -1,0 +1,78 @@
+@startuml
+title Diagrama de Sequência — Resgatar / Trocar Vantagem (Aluno)
+
+actor Aluno as A
+participant "AlunoVantagensPage\n(Angular)" as Page
+participant "ResgateService\n(Frontend)" as FeSvc
+participant "ResgateController" as Ctrl
+participant "ResgateService\n(Backend)" as Svc
+participant "AlunoRepository" as ARepo
+participant "VantagemRepository" as VRepo
+participant "TransacaoRepository" as TRepo
+participant "CodigoCupomGenerator" as Gen
+participant "QrCodeService" as Qr
+database "PostgreSQL" as DB
+participant "NotificationProducer" as Prod
+queue "RabbitMQ\nnotifications.exchange" as MQ
+participant "Consumers\n(Email / WhatsApp)" as Cons
+
+A -> Page : seleciona vantagem e confirma resgate
+Page -> FeSvc : resgatar(vantagemId)
+FeSvc -> Ctrl : POST /api/resgates\n(Bearer JWT do aluno)
+activate Ctrl
+Ctrl -> Ctrl : alunoId = getUserId(authentication)
+Ctrl -> Svc : resgatar(alunoId, vantagemId)
+activate Svc
+
+Svc -> ARepo : findByIdAndDeletedAtIsNull(alunoId)
+ARepo -> DB : SELECT
+DB --> ARepo : Aluno
+ARepo --> Svc : Aluno
+Svc -> VRepo : findByIdAndDeletedAtIsNull(vantagemId)
+VRepo -> DB : SELECT
+DB --> VRepo : Vantagem
+VRepo --> Svc : Vantagem
+
+alt saldo insuficiente (saldo < custo)
+    Svc --> Ctrl : SaldoInsuficienteException
+    Ctrl --> FeSvc : 409 Conflict
+else saldo suficiente
+    Svc -> Svc : aluno.saldo -= custo
+    Svc -> ARepo : update(aluno)
+    ARepo -> DB : UPDATE
+
+    Svc -> Gen : gerarCodigoUnico()
+    note right of Svc : repete até obter código\nnão existente (até 5 tentativas)
+    Gen --> Svc : código do cupom
+
+    Svc -> TRepo : save(Transacao RESGATE_VANTAGEM\n+ código + expiração 30 dias)
+    TRepo -> DB : INSERT
+    TRepo --> Svc : Transacao
+
+    Svc -> Qr : gerarBase64(codigo)
+    Qr --> Svc : QR Code (base64)
+
+    group Notificações (assíncrono, try/catch por destinatário)
+        Svc -> Prod : enviarEmailCupomAluno(msg + QR)
+        Prod -> MQ : publish (aluno-cupom)
+        Svc -> Prod : enviarEmailCupomEmpresa(msg)
+        Prod -> MQ : publish (empresa-cupom)
+        opt aluno possui telefone
+            Svc -> Prod : enviarWhatsAppCupomAluno(msg)
+            Prod -> MQ : publish (aluno-cupom WhatsApp)
+        end
+    end
+
+    Svc --> Ctrl : ResgateResponse{codigo, QR, saldoRestante, ...}
+    deactivate Svc
+    Ctrl --> FeSvc : 201 Created + ResgateResponse
+    deactivate Ctrl
+    FeSvc --> Page : resultado do resgate
+    Page --> A : exibe cupom + código + QR
+end
+
+== Consumo assíncrono ==
+MQ -> Cons : entrega mensagens
+Cons -> Cons : envia email ao aluno (template cupom-aluno),\nemail à empresa (template cupom-empresa)\ne WhatsApp ao aluno
+
+@enduml

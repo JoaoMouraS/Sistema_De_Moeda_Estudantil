@@ -1,0 +1,46 @@
+@startuml
+title Diagrama de Sequência — Cadastrar Vantagem (Empresa Parceira)
+
+actor "Empresa Parceira" as E
+participant "VantagemFormPage\n(Angular)" as Page
+participant "VantagemService\n(Frontend)" as FeSvc
+participant "VantagemController" as Ctrl
+participant "VantagemService\n(Backend)" as Svc
+participant "EmpresaParceiraRepository" as ERepo
+participant "VantagemRepository" as VRepo
+database "PostgreSQL" as DB
+
+E -> Page : preenche nome, descrição,\ncusto em moedas e foto (URL)
+Page -> FeSvc : cadastrar({nome, descricao, custoMoedas, fotoUrl})
+FeSvc -> Ctrl : POST /api/vantagens\n(Bearer JWT da empresa)
+activate Ctrl
+
+note right of Ctrl : @Secured(ROLE_EMPRESA)
+Ctrl -> Ctrl : empresaId = getUserId(authentication)
+Ctrl -> Svc : cadastrar(empresaId, request)
+activate Svc
+
+Svc -> ERepo : findByIdAndDeletedAtIsNull(empresaId)
+ERepo -> DB : SELECT
+DB --> ERepo : EmpresaParceira
+ERepo --> Svc : Optional<EmpresaParceira>
+
+alt empresa não encontrada
+    Svc --> Ctrl : EmpresaNaoEncontradaException
+    Ctrl --> FeSvc : 404 Not Found
+else empresa encontrada
+    Svc -> Svc : monta Vantagem\n(nome, descricao, custoMoedas, fotoUrl, empresa)
+    Svc -> VRepo : save(vantagem)
+    VRepo -> DB : INSERT
+    DB --> VRepo : Vantagem (id)
+    VRepo --> Svc : Vantagem
+    Svc -> Svc : toResponse(vantagem)
+    Svc --> Ctrl : VantagemResponse
+    deactivate Svc
+    Ctrl --> FeSvc : 201 Created + VantagemResponse
+    deactivate Ctrl
+    FeSvc --> Page : sucesso
+    Page --> E : vantagem cadastrada
+end
+
+@enduml

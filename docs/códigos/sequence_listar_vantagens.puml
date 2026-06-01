@@ -1,0 +1,46 @@
+@startuml
+title Diagrama de Sequência — Listar Vantagens (Catálogo do Aluno)
+
+actor Aluno as A
+participant "AlunoVantagensPage\n(Angular)" as Page
+participant "ProfileService\n(Frontend)" as PSvc
+participant "VantagemService\n(Frontend)" as FeSvc
+participant "StudentProfileController" as PCtrl
+participant "VantagemController" as Ctrl
+participant "VantagemService\n(Backend)" as Svc
+participant "VantagemRepository" as VRepo
+database "PostgreSQL" as DB
+
+A -> Page : abre catálogo de vantagens
+activate Page
+
+' Carrega saldo do aluno (para habilitar/desabilitar resgate)
+Page -> PSvc : getStudentProfile(alunoId)
+PSvc -> PCtrl : GET /api/students/{id}/profile
+PCtrl --> PSvc : AlunoResponse{saldoMoedas}
+PSvc --> Page : saldo
+
+' Carrega catálogo de vantagens ativas
+Page -> FeSvc : listarCatalogo()
+FeSvc -> Ctrl : GET /api/vantagens
+activate Ctrl
+Ctrl -> Svc : listarTodas()
+activate Svc
+Svc -> VRepo : findAllByDeletedAtIsNull()
+VRepo -> DB : SELECT vantagens ativas
+DB --> VRepo : List<Vantagem>
+VRepo --> Svc : List<Vantagem>
+loop para cada vantagem
+    Svc -> Svc : toResponse(vantagem)
+end
+Svc --> Ctrl : List<VantagemResponse>
+deactivate Svc
+Ctrl --> FeSvc : 200 OK + List<VantagemResponse>
+deactivate Ctrl
+FeSvc --> Page : vantagens
+deactivate Page
+
+Page -> Page : aplica filtros (empresa / custo máximo)
+Page --> A : exibe catálogo com nome, descrição,\nfoto, custo e empresa
+
+@enduml
